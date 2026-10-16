@@ -120,6 +120,7 @@ details.writeup pre{white-space:pre-wrap;font:13px/1.55 var(--f-body);color:var(
 .field input,.field select,.field textarea,.inp{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 10px;min-height:40px;width:100%;min-width:0}
 .field textarea{min-height:80px;resize:vertical}
 .check-inline{display:flex;gap:8px;align-items:center;font-size:14px}
+.field input[type=checkbox],.check-inline input{width:20px;height:20px;min-height:0;flex:0 0 auto;padding:0;margin:0}
 .fs-title{grid-column:1/-1;font:600 17px var(--f-display);margin-top:8px;padding-top:10px;border-top:1px solid var(--line);letter-spacing:.02em}
 @media (max-width:520px){.form{grid-template-columns:minmax(0,1fr)}}
 .feat{display:flex;flex-direction:column;gap:6px;padding-block:10px;border-top:1px solid var(--line)}
@@ -152,9 +153,25 @@ details.writeup pre{white-space:pre-wrap;font:13px/1.55 var(--f-body);color:var(
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 textarea.csv{width:100%;min-height:160px;font:12px var(--f-mono);border:1px solid var(--line);border-radius:8px;padding:8px;background:var(--surface)}
 .phgrid{display:flex;flex-wrap:wrap;gap:8px}
-.ph{position:relative;width:104px;display:flex;flex-direction:column;gap:4px}
-.ph img{width:104px;height:104px;object-fit:cover;border-radius:6px;background:var(--surface-2)}
+.ph{position:relative;width:120px;display:flex;flex-direction:column;gap:4px}
+.ph img{width:120px;height:120px;object-fit:cover;border-radius:6px;background:var(--surface-2)}
 .ph select{font-size:12px;padding:3px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.lblrow{display:flex;align-items:center;gap:6px;min-width:0}
+.info{flex:0 0 auto;width:22px;height:22px;border-radius:999px;border:1px solid var(--ink-3);background:transparent;color:var(--ink-2);font:italic 600 12px/1 Georgia,serif;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;vertical-align:middle}
+.info[aria-expanded="true"]{background:var(--anod);border-color:var(--anod);color:var(--anod-ink)}
+.help{font-size:13px;line-height:1.45;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.chkadd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:8px;margin-top:6px}
+@media (max-width:520px){.chkadd{grid-template-columns:minmax(0,1fr) auto}.chkadd select{grid-column:1/-1;grid-row:2}}
+#pe{position:fixed;inset:0;z-index:70;background:#0b0d10;color:#e8ebef;display:flex;flex-direction:column;padding:calc(8px + env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) calc(12px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));gap:10px}
+#pe .bar1{display:flex;gap:8px;align-items:center}
+#pe .bar1 b{flex:1;font:600 20px var(--f-display)}
+#pe .stage{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+#pe canvas{touch-action:none;max-width:100%;max-height:100%;display:block}
+#pe .tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+#pe .btn{background:#22272d;border-color:#3a424b;color:#e8ebef}
+#pe .btn.primary{background:var(--beam);border-color:var(--beam);color:#1b1205}
+#pe .btn[aria-pressed="true"]{background:#e8ebef;color:#0b0d10}
+.mainbadge{font-size:12px;font-weight:600;color:var(--beam);text-align:center;min-height:32px;display:flex;align-items:center;justify-content:center}
 .ph .x{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.65);color:#fff;border:0;border-radius:999px;width:26px;height:26px;cursor:pointer}
 .edrow{display:grid;grid-template-columns:minmax(0,1fr) 72px 72px auto;gap:6px;align-items:center}
 .edrow .inp{padding:8px 8px}
@@ -209,13 +226,13 @@ function defaultGuides(){
   const D=mk("g-dcell","D-cell (incandescent)",
     [[1979,1979,"1979"],[1980,1980,"1980"],[1981,1986,"1981–86"],[1987,1989,"1987–89"],[1990,1991,"1990–91"],[1992,1995,"1992–95"],[1996,2002,"1996–2002"],[2003,2009,"2003–09"],[2010,2017,"2010–17"],[2018,null,"2018+"]],
     [["serialPrefix","Serial prefix","",[["none","No letter (numbers only)",[0,1,2,3,4]],["D","D in front",[5,6,7,8,9]]]],
-     ["focusGrip","Focus grip position","Pre-1992 lights only.",[["low","Low (¼″ gap below head)",[0]],["standard","Standard (level with head)",[1,2,3,4]]]],
+     ["focusGrip","Focus grip position","Pre-1992 lights only.",[["low","Low (about 6 mm / ¼″ gap below head)",[0]],["standard","Standard (level with head)",[1,2,3,4]]]],
      ["gripLength","Grip length","Pre-1992 lights only.",[["standard","Standard (long)",[0,1,2,3]],["reduced","Reduced (short)",[4]]]],
      ["barrelStamp","Barrel stamp (opposite serial)","",[["patenPending","“Paten Pending”",[0,1]],["madeUSA","“Patented Made in U.S.A.”",[2,3,4,5,6]],["patentedUSA","“Patented in U.S.A.”",[7]],["none","No stamp",[8,9]]]],
      ["bezel","Bezel mark","",[["tm","MAG-LITE TM, stamped",[0,1,2]],["r","MAG-LITE ®, stamped",[3]],["rLaser","MAG-LITE ®, laser-etched",[4]],["tmPanther","Panther TM",[5]],["rPanther","Panther ®",[6,7,8]],["large","Panther ®, large wide MAGLITE logo",[9]]]],
      ["retainer","Switch retainer","",[["alRing","Aluminium ring",[0,1,2,3]],["plRing","Plastic ring",[4]],["clip","Retaining clip",[5,6,7,8,9]]]],
      ["screws","Switch screws","1992+ switches.",[["allen","Allen / hex",[5,6,7]],["torx","Torx",[8,9]]]],
-     ["diameter","Barrel outside diameter","",[["1.66","1.66″ (pipe, pre-1992)",[0,1,2,3,4]],["1.55","1.55″ (extruded, 1992+)",[5,6,7,8,9]]]]],
+     ["diameter","Barrel outside diameter","",[["1.66","42.2 mm (1.66″) — pre-1992",[0,1,2,3,4]],["1.55","39.4 mm (1.55″) — 1992+",[5,6,7,8,9]]]]],
     {enabled:true,ranges:{
       "2":{e0:[1,18000],e1:[18000,70000],e2:[70000,700000],e3:[700000,1400000],e4:[1400000,3000000]},
       "3":{e0:[1,22000],e1:[35000,130000],e2:[130000,1000000],e3:[1000000,2000000],e4:[2000000,4100000]},
@@ -237,8 +254,36 @@ function defaultGuides(){
     [[1984,1984,"1984"],[1985,1985,"1985"],[1986,1991,"1986–91"],[1992,1995,"1992–95"],[1996,null,"1996+"]],
     [["miniBezel","Bezel text","",[["stamped","Stamped, white paint fill — TM, Ontario, Ca.",[0]],["laserTM","Laser-etched — TM, Ontario, Ca.",[1]],["laserR","Laser-etched — ®, Ontario, Ca.",[2]],["pantherTM","Panther TM — “AA”, California, USA",[3]],["pantherR","Panther ® — “AA”, California, USA",[4]]]]],
     null,"From the Mini Maglite Quick Dating Guide. AA incandescent Minis carry no serial numbers.");
+  for(const g of [D,C,AA]) for(const f of g.features) f.help=(FEATURE_HELP[g.id]||{})[f.id]||"";
   return [D,C,AA];
 }
+/* ⓘ descriptions for the built-in chart features (from the maglitehistory.blogspot.com Quick Dating Guides) */
+const BEZEL_HELP="The bezel is the ring at the front of the head. Stamped text is pressed into the metal and filled with white paint — you can feel the letters with a fingernail. Laser-etched text (from 1990) is smooth. Check the symbol after MAG-LITE: TM (to 1986) or ® (from 1987). The Panther (cat-head) logo appears from 1992, with TM after it 1992–95 and ® from 1996. From 2018 the logo is wider and reads MAGLITE with no dash.";
+const FEATURE_HELP={
+  "g-dcell":{
+    serialPrefix:"The serial is stamped on the barrel. From 1992 a “D” was added in front to show the cell size (e.g. D3014438870). Lights made 1979–1991 have numbers only; the first digit is the cell count (40854663 = 4-cell, number 854,663).",
+    focusGrip:"Look where the knurled focus grip on the head starts. On 1979 lights there is a gap of about 6 mm (¼″) between the top of the head and the grip — the “low” grip. From 1980 the grip sits level with the top of the head. Pre-1992 lights only.",
+    gripLength:"The knurled grip on the barrel was shortened and standardised in 1990 to cut production cost. 1989 and earlier lights have the longer grip; 1990–91 lights the shorter one. The guide gives no measurement, so compare with a light of known date — your 4D 40854663 (1987–89) has the standard long grip. Pre-1992 lights only.",
+    barrelStamp:"Read the text stamped on the barrel opposite the serial number: “Paten Pending” (1979–80, the factory's own spelling), “Patented Made in U.S.A.” (1981–2002), “Patented in U.S.A.” (2003–09) or nothing (2010 on).",
+    bezel:BEZEL_HELP,
+    retainer:"The part that holds the switch in the barrel. 1979–89: aluminium retaining ring. 1990–91: plastic retaining ring. From 1992 the switch was redesigned and uses a retaining clip.",
+    screws:"The screws in the switch assembly. 1992–2009 switches use standard hex (Allen) screws. From 2010 Maglite used a proprietary Torx screw; a Maglite Torx key comes with new switch assemblies.",
+    diameter:"Measure across the barrel with vernier calipers (a tape measure isn't precise enough). Before 1992 barrels were made from 1¼″ aluminium pipe: 42.2 mm (1.66″) outside, 35.1 mm (1.38″) inside. From 1992 Maglite used its own extruded tube: 39.4 mm (1.55″) outside, 34.3 mm (1.35″) inside."
+  },
+  "g-ccell":{
+    serialPrefix:"From 2003 a “C” was added in front of the serial. Lights made 1981–2002 have numbers only; the first digit is the cell count.",
+    endCap:"From 1987 C-cells came with an extended “store-a-bulb” tail cap with room for a spare bulb. Earlier lights have the shorter standard cap.",
+    barrelStamp:"Read the text on the barrel opposite the serial. Only serials 1 to about 3,000 of each model (early 1981) say “Paten Pending”. “Patented Made in U.S.A.” from mid-1981 to 2002 (and a few early-2003 C-serials), “Patented in U.S.A.” from late 2003 to 2009, nothing from 2010.",
+    bezel:BEZEL_HELP,
+    oring:"Unscrew the head and look for the rubber O-ring. Before 2003 it sits in the head; from 2003 it is on the barrel.",
+    retainer:"Before 2003 the switch is held by a retaining ring; from 2003 by a retaining clip."
+  },
+  "g-miniaa":{
+    miniBezel:"Read the full text around the Mini's head. 1984: stamped with white paint, “Mini Maglite TM … Ontario, Ca. – USA”. 1985: same wording, laser-etched. 1986–91: laser-etched with ® after Mini Maglite, Ontario. 1992–95: Panther logo with TM, “AA”, “California, USA”. 1996 on: Panther logo with ®. Incandescent AA Minis have no serial numbers."
+  }
+};
+/* label changes made in later versions, used to update charts already on the phone */
+const LABEL_UPDATES={"g-dcell":{focusGrip:{low:["Low (¼″ gap below head)","Low (about 6 mm / ¼″ gap below head)"]},diameter:{"1.66":["1.66″ (pipe, pre-1992)","42.2 mm (1.66″) — pre-1992"],"1.55":["1.55″ (extruded, 1992+)","39.4 mm (1.55″) — 1992+"]}}};
 function defaultClasses(){
   return [
     {id:"cl-dcell",name:"D-cell",code:"D",cellType:"D",cellVoltage:1.5,packVoltage:null,guideId:"g-dcell",minYear:1979,models:"2D, 3D, 4D, 5D, 6D, 7D",notes:"Incandescent D-cell lights."},
@@ -265,6 +310,105 @@ function fmtRange(from,to,open){ if(from==null) return "—"; if(open) return fr
 function cellsOf(t){ if(t.cells) return +t.cells; const m=String(t.model||"").match(/^(\d)/); return m?+m[1]:null; }
 function voltsOf(t){ const c=clsOf(t); if(!c) return "—"; if(c.packVoltage) return `${c.packVoltage} V pack`; const n=cellsOf(t); return n&&c.cellVoltage? `${+(n*c.cellVoltage).toFixed(2)} V (${n} × ${c.cellType||""})`:"—"; }
 const isOwned=t=>!["Sold","Traded"].includes(t.status);
+
+/* ================= money: original currency + AUD equivalent ================= */
+const CURRENCIES=["AUD","USD","GBP","EUR","NZD","CAD","JPY"];
+const CUR_SYM={AUD:"A$",USD:"US$",GBP:"£",EUR:"€",NZD:"NZ$",CAD:"C$",JPY:"¥"};
+const curOf=c=>c||"AUD";
+const blank=v=>v==null||v==="";
+const todayISO=()=>{ const d=new Date(); return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10); };
+function fmtMoney(n,cur){ if(blank(n)) return "—"; cur=curOf(cur); const v=Number(n); const dp=cur==="JPY"?0:(Math.round(v*100)%100?2:0); return (CUR_SYM[cur]||cur+" ")+v.toLocaleString("en-AU",{minimumFractionDigits:dp,maximumFractionDigits:dp}); }
+function priceAUD(t){ if(blank(t.price)) return null; if(curOf(t.priceCur)==="AUD") return +t.price; return blank(t.priceAud)?null:+t.priceAud; }
+function valAUD(t,k){ if(blank(t[k])) return null; if(curOf(t.valueCur)==="AUD") return +t[k]; return blank(t[k+"Aud"])?null:+t[k+"Aud"]; }
+function showPrice(t){ if(t.price===0) return "Free"; if(blank(t.price)) return "—"; const c=curOf(t.priceCur); if(c==="AUD") return fmtMoney(t.price,"AUD"); const a=priceAUD(t); return `${fmtMoney(t.price,c)} (${a!=null?fmtMoney(a,"AUD"):"AUD pending"})`; }
+function showValue(t){ if(blank(t.valueLow)&&blank(t.valueHigh)) return "—"; const c=curOf(t.valueCur); const rng=(a,b,cc)=>blank(a)?fmtMoney(b,cc):blank(b)?fmtMoney(a,cc):`${fmtMoney(a,cc)} – ${fmtMoney(b,cc)}`; if(c==="AUD") return rng(t.valueLow,t.valueHigh,"AUD"); const lo=valAUD(t,"valueLow"),hi=valAUD(t,"valueHigh"); return `${rng(t.valueLow,t.valueHigh,c)} (${lo!=null||hi!=null?rng(lo,hi,"AUD"):"AUD pending"})`; }
+const pendingConv=t=>(!blank(t.price)&&t.price!==0&&curOf(t.priceCur)!=="AUD"&&blank(t.priceAud))||(curOf(t.valueCur)!=="AUD"&&((!blank(t.valueLow)&&blank(t.valueLowAud))||(!blank(t.valueHigh)&&blank(t.valueHighAud))));
+const _rates={};
+/* Daily reference rates from the European Central Bank, via the free Frankfurter service (no key, no account). */
+async function getRate(cur,date){
+  cur=curOf(cur); if(cur==="AUD") return {rate:1,date};
+  const d=(date&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&date<=todayISO())?date:"latest"; const key=cur+"|"+d; if(_rates[key]) return _rates[key];
+  const tries=[
+    async()=>{ const r=await fetch(`https://api.frankfurter.dev/v1/${d}?base=${cur}&symbols=AUD`); if(!r.ok) throw 0; const j=await r.json(); return {rate:j.rates&&j.rates.AUD,date:j.date}; },
+    async()=>{ const r=await fetch(`https://api.frankfurter.dev/v2/rate/${cur.toLowerCase()}/aud${d==="latest"?"":"?date="+d}`); if(!r.ok) throw 0; const j=await r.json(); return {rate:j.rate,date:j.date}; }
+  ];
+  for(const f of tries){ try{ const x=await f(); if(x&&+x.rate>0){ x.rate=+x.rate; _rates[key]=x; return x; } }catch{} }
+  return null;
+}
+/* fill AUD equivalents on a torch; returns true if anything changed */
+async function convertTorch(t){
+  let changed=false;
+  if(!blank(t.price)&&curOf(t.priceCur)!=="AUD"&&!t.priceAudManual&&blank(t.priceAud)){ const r=await getRate(t.priceCur,t.acqDate); if(r){ t.priceAud=Math.round(t.price*r.rate*100)/100; t.priceRate=r.rate; t.priceRateDate=r.date; changed=true; } }
+  if(curOf(t.valueCur)!=="AUD"&&!t.valueAudManual&&((!blank(t.valueLow)&&blank(t.valueLowAud))||(!blank(t.valueHigh)&&blank(t.valueHighAud)))){ const r=await getRate(t.valueCur,t.valueDate); if(r){ for(const k of ["valueLow","valueHigh"]) t[k+"Aud"]=blank(t[k])?null:Math.round(t[k]*r.rate); t.valueRate=r.rate; t.valueRateDate=r.date; changed=true; } }
+  return changed;
+}
+function rateNote(t,kind){
+  const cur=curOf(kind==="price"?t.priceCur:t.valueCur);
+  if(t[kind+"AudManual"]) return "Entered by you.";
+  const rate=t[kind+"Rate"], rd=t[kind+"RateDate"];
+  if(rate) return `1 ${cur} = ${(+rate).toFixed(4)} AUD on ${fmtDate(rd)} (European Central Bank rate).`;
+  return navigator.onLine===false?"Offline — the AUD amount will be filled in next time the app is online.":"Fills in automatically from the exchange rate.";
+}
+
+/* ================= ⓘ field descriptions ================= */
+const HELP={
+  classId:"Groups torches that share a battery type and dating chart. Add or change classes under More → Classes.",
+  model:"The model as Maglite names it, e.g. 4D, 3C, Mini Maglite AA. Suggestions come from the class.",
+  cells:"Number of batteries. Leave empty and it's taken from the model (4D = 4). Used to work out the voltage and to check pre-1992 serial ranges.",
+  partNo:"The catalogue number on the packaging, box or receipt, e.g. RE1019 or S5D016U.",
+  colour:"Anodised colour as you'd describe it: Black, Blue, Red, Green, Silver, Camo…",
+  serial:"Stamped on the barrel. Type it exactly as shown, including any letters at the start (D, C, E, MCLM…).",
+  nickname:"Your own name for it, to tell similar torches apart.",
+  status:"In collection and Restoration project count in the totals. Sold and Traded stay on record but are left out of totals and stats.",
+  notes:"Anything you want to remember about this torch.",
+  acqDate:"The date you got it. Used for spend-by-year and to look up the exchange rate for a foreign-currency purchase.",
+  acqType:"Second-hand, New (retail), Gift or Free.",
+  source:"Where it came from: Marketplace, eBay, Amazon, garage sale, swap meet…",
+  location:"Suburb, town or the seller's name.",
+  price:"Everything you paid for it, including postage, in the currency you paid in. Enter 0 for free.",
+  priceCur:"The currency you paid in. For anything other than AUD, the app converts the amount to AUD using the exchange rate on the acquisition date.",
+  priceAud:"Filled in automatically from the European Central Bank rate when the phone is online. Type over it with the amount from your bank or card statement if you want the exact figure (it then stays as you entered it).",
+  orderNo:"Order or receipt number, e.g. from Amazon or eBay.",
+  boughtWith:"Other items in the same purchase, e.g. “Purple AA Mini”.",
+  markings:"What you can see on the torch, using the dating chart linked to this class. Leave “Not recorded” if you can't tell. Date it uses these.",
+  myFrom:"Your production estimate — the first possible year. Use Date it to work it out from the markings.",
+  myTo:"The last possible year. Leave empty for a single year.",
+  datingSource:"Where the estimate came from. Dating chart: from markings. Serial range: from the pre-1992 serial tables. Mag Instrument: their reply to a serial enquiry. Pack date code: printed on the packaging. Receipt: purchase paperwork.",
+  myOpen:"Tick for a range that runs to today, e.g. 1996+.",
+  wuFrom:"What the AI write-up estimated, kept for comparison only.",
+  wuTo:"What the AI write-up estimated, kept for comparison only.",
+  datingNotes:"Your reasoning: which markings or serial evidence you used.",
+  light:"Incandescent (krypton or xenon bulb), Halogen (Mag Chargers) or LED.",
+  bulb:"Bulb type or part number, e.g. LWSA401.",
+  switchType:"Mechanical click switch, or Electronic (QuickClik) on later Mag Chargers and LED models.",
+  battery:"Alkaline cells, or the NiCd / NiMH battery stick in a Mag Charger.",
+  mods:"Anything not factory: LED drop-in, replacement switch, aftermarket lens…",
+  working:"Does it light up as it is?",
+  grade:"Mint / NOS: unused, as new. Excellent: light wear only. Good: normal wear, everything works. User: obvious wear, scratches, worn anodising. Heavy wear: road rash, dents, bare metal.",
+  originality:"All original: every part from the same era. Mixed parts: head, bezel, switch or tail cap from a different era (Date it shows these as “Mixed parts?”). Modified: aftermarket parts fitted.",
+  missingParts:"Separate with commas, e.g. Lens, Bulb, Tailcap spring.",
+  packaging:"Box or blister pack, sealed or opened, and any date code printed on it (e.g. 12/05).",
+  conditionNotes:"Specific marks and wear: road rash on the bezel, worn knurling, battery leak…",
+  valueLow:"What it would sell for, low end, in the currency of your source (e.g. US$ for eBay US sold listings). Converted to AUD.",
+  valueHigh:"High end of the estimate, in the same currency as the low end.",
+  valueCur:"The currency of your valuation source. Anything other than AUD is converted using the exchange rate on the valuation date.",
+  valueAud:"AUD equivalents, filled in automatically when online. Type over them to set your own figures.",
+  valueDate:"When the estimate was made. Prices drift, so this shows how current it is. Also used for the exchange rate.",
+  valueSource:"Where the figure came from, e.g. “eBay US sold, Oct 2026”.",
+  attachments:"Receipts, order confirmations, manuals — PDF or image.",
+  checks:"Open questions for this torch. Link one to a field and it ticks itself off when that field is filled in and saved."
+};
+const infoBtn=k=>`<button type="button" class="info" data-help="${esc(k)}" aria-label="What is this?" aria-expanded="false">i</button>`;
+const lab=(k,text,forId)=>!HELP[k]?`<label for="${esc(forId||"f_"+k)}">${text}</label>`:`<div class="lblrow"><label for="${esc(forId||"f_"+k)}">${text}</label>${infoBtn(k)}</div><div class="help" id="h_${esc(k)}" hidden>${esc(HELP[k]||"")}</div>`;
+const featLab=(f,forId)=>f.help?`<div class="lblrow"><label${forId?` for="${esc(forId)}"`:""}>${esc(f.label)}</label>${infoBtn("m_"+f.id)}</div><div class="help" id="h_m_${esc(f.id)}" hidden>${esc(f.help)}</div>`:`<label${forId?` for="${esc(forId)}"`:""}>${esc(f.label)}</label>`;
+
+/* ================= self-clearing checks ================= */
+const CHECK_FIELDS=[["acqDate","Date acquired"],["price","Price paid"],["source|location","Source or seller"],["acqType","Acquisition type"],["photos","A photo"],["serial","Serial"],["partNo","Part / model number"],["grade","Grade"],["originality","Originality"],["myFrom","Production estimate"],["valueHigh","Value estimate"],["packaging","Packaging"],["light","Light source"],["working","Working"]];
+function checkFieldChoices(t){ const g=guideOf(t); return [...CHECK_FIELDS,...(g?g.features.map(f=>["markings."+f.id,f.label]):[])]; }
+function checkFieldLabel(t,key){ if(!key) return ""; const hit=checkFieldChoices(t).find(c=>c[0]===key); if(hit) return hit[1]; return key.startsWith("markings.")?key.slice(9):key; }
+function filled(t,key){ return key.split("|").some(k=> k==="photos"?(t.photos||[]).length>0 : k.startsWith("markings.")?!!(t.markings||{})[k.slice(9)] : !blank(t[k])); }
+function applyAutoChecks(t){ let n=0; for(const c of (t.checks||[])){ if(c.field&&!c.done&&filled(t,c.field)){ c.done=true; c.autoDone=todayISO(); n++; } } return n; }
+const CHECK_LINKS=[[/^bezel/i,"markings.bezel"],[/end cap:/i,"markings.endCap"],[/^barrel stamp/i,"markings.barrelStamp"],[/grip length/i,"markings.gripLength"],[/switch retainer/i,"markings.retainer"],[/switch screws/i,"markings.screws"],[/^condition grade/i,"grade"],[/^seller \/ location/i,"source|location"],[/^source type/i,"acqType"],[/^(overall photo|take photos)/i,"photos"],[/^confirm acquisition date \(/i,"acqDate"],[/^amazon order (date and price|number, date and price)/i,"price"]];
 
 /* file blobs → object URLs */
 async function urlFor(id){ if(!id) return ""; if(S.urls[id]) return S.urls[id]; const f=await dbGet("files",id); if(!f) return ""; S.urls[id]=URL.createObjectURL(f.blob); return S.urls[id]; }
@@ -296,7 +440,7 @@ const featLabel=(g,k)=>k==="__serial"?"serial range":(g.features.find(f=>f.id===
 function eraSpan(g,ids){ const sel=g.eras.filter(e=>ids.includes(e.id)); if(!sel.length) return "—"; const open=sel.some(e=>e.to==null); return fmtRange(Math.min(...sel.map(e=>e.from)),open?null:Math.max(...sel.map(e=>e.to)),open); }
 
 /* ================= to-check ================= */
-function autoChecks(t){ const a=[]; if(!t.acqDate) a.push("No acquisition date"); if(t.price==null||t.price==="") a.push("No price recorded"); if(!t.source&&!t.location) a.push("No source or seller"); if(!(t.photos||[]).length) a.push("No photos"); if(t.myFrom==null) a.push("No production estimate"); return a; }
+function autoChecks(t){ const a=[]; if(!t.acqDate) a.push("No acquisition date"); if(t.price==null||t.price==="") a.push("No price recorded"); if(!t.source&&!t.location) a.push("No source or seller"); if(!(t.photos||[]).length) a.push("No photos"); if(t.myFrom==null) a.push("No production estimate"); if(pendingConv(t)) a.push("AUD conversion waiting for internet"); return a; }
 const openChecks=t=>(t.checks||[]).filter(c=>!c.done).length+autoChecks(t).length;
 
 /* ================= render ================= */
@@ -316,17 +460,17 @@ function backupBanner(){
 }
 function viewCollection(){
   const own=S.torches.filter(isOwned);
-  const paid=own.reduce((s,t)=>s+(+t.price||0),0), vlo=own.reduce((s,t)=>s+(+t.valueLow||0),0), vhi=own.reduce((s,t)=>s+(+t.valueHigh||0),0);
+  const paid=own.reduce((s,t)=>s+(priceAUD(t)||0),0), vlo=own.reduce((s,t)=>s+(valAUD(t,"valueLow")||0),0), vhi=own.reduce((s,t)=>s+(valAUD(t,"valueHigh")||0),0), pend=own.filter(pendingConv).length;
   const q=S.q.trim().toLowerCase();
   let list=S.torches.filter(t=>S.cls==="all"||t.classId===S.cls);
   if(q) list=list.filter(t=>[t.model,t.colour,t.serial,t.nickname,t.partNo,t.source,t.location,t.status,t.notes,(clsOf(t)||{}).name,fmtRange(t.myFrom,t.myTo,t.myOpen)].join(" ").toLowerCase().includes(q));
-  const sorters={model:(a,b)=>label(a).localeCompare(label(b),undefined,{numeric:true}),oldest:(a,b)=>(a.myFrom??9999)-(b.myFrom??9999),acquired:(a,b)=>String(b.acqDate||"").localeCompare(String(a.acqDate||"")),value:(a,b)=>(+b.valueHigh||0)-(+a.valueHigh||0)};
+  const sorters={model:(a,b)=>label(a).localeCompare(label(b),undefined,{numeric:true}),oldest:(a,b)=>(a.myFrom??9999)-(b.myFrom??9999),acquired:(a,b)=>String(b.acqDate||"").localeCompare(String(a.acqDate||"")),value:(a,b)=>(valAUD(b,"valueHigh")||0)-(valAUD(a,"valueHigh")||0)};
   list.sort(sorters[S.sort]);
   const used=S.classes.filter(c=>S.torches.some(t=>t.classId===c.id));
   const chips=[["all","All",S.torches.length],...used.map(c=>[c.id,c.name,S.torches.filter(t=>t.classId===c.id).length])].map(([id,n,k])=>`<button type="button" class="chip" data-cls="${esc(id)}" aria-pressed="${S.cls===id}">${esc(n)} <span class="muted num">${k}</span></button>`).join("");
   if(!S.torches.length) return `<section class="view"><div class="empty"><b style="font:600 22px var(--f-display)">No torches on this phone yet</b><span>Restore your backup file to load your collection, or add your first torch.</span><div class="row" style="justify-content:center"><button type="button" class="btn primary" data-restore>Restore from backup</button><button type="button" class="btn" data-add>Add a torch</button></div></div></section>`;
   return `<section class="view">${backupBanner()}
-    <div class="summary"><div><span class="lbl">Torches</span><b>${own.length}</b></div><div><span class="lbl">Total paid</span><b>${money(paid)}</b></div><div><span class="lbl">Est. value</span><b>${vhi?money(vlo)+"–"+money(vhi).slice(1):"—"}</b></div></div>
+    <div class="summary"><div><span class="lbl">Torches</span><b>${own.length}</b></div><div><span class="lbl">Total paid (AUD)</span><b>${money(paid)}</b></div><div><span class="lbl">Est. value (AUD)</span><b>${vhi?money(vlo)+"–"+money(vhi).slice(1):"—"}</b></div></div>${pend?`<div class="muted small">${pend} foreign-currency amount${pend===1?" is":"s are"} waiting for an exchange rate and not yet in the totals. They fill in automatically next time the app is online.</div>`:""}
     <div class="toolbar"><input id="search" class="search" type="search" placeholder="Search model, serial, colour, seller…" value="${esc(S.q)}" aria-label="Search">
       <select id="sort" class="sel" aria-label="Sort">${[["model","Sort: model"],["oldest","Sort: oldest first"],["acquired","Sort: newest buy"],["value","Sort: value"]].map(([v,l])=>`<option value="${v}"${S.sort===v?" selected":""}>${l}</option>`).join("")}</select></div>
     <div class="chips">${chips}</div>
@@ -364,13 +508,13 @@ function openDetail(id){
       ${auto&&(auto.used||auto.serialUsed)?`<div class="small">Chart check from recorded markings: <b>${auto.eras.length?fmtRange(auto.from,auto.to,auto.open):"no single match"}</b>${auto.odd.length?` — odd one out: ${auto.odd.map(k=>esc(featLabel(g,k))).join(", ")}`:""}</div>`:""}
       ${!g?`<div class="muted small">${esc(c&&c.notes||"No dating chart is linked to this class.")}${c&&c.minYear?` Earliest possible year: ${c.minYear}.`:""} You can link or build a chart under More → Classes and Dating charts.</div>`:""}
     </div>
-    ${checks.length||autos.length?`<div class="panel"><h3>To check</h3><ul class="checks">${checks.map((c,i)=>`<li><label><input type="checkbox" data-chk="${esc(t.id)}" data-i="${i}" ${c.done?"checked":""}><span class="${c.done?"done":""}">${esc(c.t)}</span></label></li>`).join("")}${autos.map(a=>`<li class="muted small">• ${esc(a)} (fill in with Edit)</li>`).join("")}</ul></div>`:""}
+    ${checks.length||autos.length?`<div class="panel"><h3>To check</h3><ul class="checks">${checks.map((c,i)=>`<li><label><input type="checkbox" data-chk="${esc(t.id)}" data-i="${i}" ${c.done?"checked":""}><span><span class="${c.done?"done":""}">${esc(c.t)}</span>${c.field?` <span class="muted small">· ${c.done&&c.autoDone?"cleared automatically":"clears when "+esc(checkFieldLabel(t,c.field))+" is filled in"}</span>`:""}</span></label></li>`).join("")}${autos.map(a=>`<li class="muted small">• ${esc(a)} (fill in with Edit)</li>`).join("")}</ul></div>`:""}
     <div class="panel"><h3>Identity</h3><dl class="kv"><dt>Class</dt><dd>${esc(c?c.name:"—")}</dd><dt>Model</dt><dd>${esc(t.model||"—")}</dd>${t.partNo?`<dt>Part / model no.</dt><dd class="mono">${esc(t.partNo)}</dd>`:""}<dt>Voltage</dt><dd>${voltsOf(t)}</dd><dt>Colour</dt><dd>${esc(t.colour||"—")}</dd></dl></div>
-    <div class="panel"><h3>Acquisition</h3><dl class="kv"><dt>Date</dt><dd>${fmtDate(t.acqDate)}${t.acqDateApprox?" (approx.)":""}</dd><dt>Type</dt><dd>${esc(t.acqType||"—")}</dd><dt>Source</dt><dd>${esc(t.source||"—")}</dd><dt>Location / seller</dt><dd>${esc(t.location||"—")}</dd><dt>Price paid</dt><dd>${t.price===0?"Free":money(t.price)}${t.priceApprox?" (approx.)":""}</dd>${t.boughtWith?`<dt>Bought with</dt><dd>${esc(t.boughtWith)}</dd>`:""}${t.orderNo?`<dt>Order no.</dt><dd class="mono">${esc(t.orderNo)}</dd>`:""}</dl></div>
+    <div class="panel"><h3>Acquisition</h3><dl class="kv"><dt>Date</dt><dd>${fmtDate(t.acqDate)}${t.acqDateApprox?" (approx.)":""}</dd><dt>Type</dt><dd>${esc(t.acqType||"—")}</dd><dt>Source</dt><dd>${esc(t.source||"—")}</dd><dt>Location / seller</dt><dd>${esc(t.location||"—")}</dd><dt>Total paid (incl. postage)</dt><dd>${showPrice(t)}${t.priceApprox?" (approx.)":""}</dd>${curOf(t.priceCur)!=="AUD"&&!blank(t.price)?`<dt>Exchange rate</dt><dd class="small">${esc(rateNote(t,"price"))}</dd>`:""}${t.boughtWith?`<dt>Bought with</dt><dd>${esc(t.boughtWith)}</dd>`:""}${t.orderNo?`<dt>Order no.</dt><dd class="mono">${esc(t.orderNo)}</dd>`:""}</dl></div>
     ${g?`<div class="panel"><h3>Markings · ${esc(g.name)}</h3><dl class="kv">${marks}</dl></div>`:""}
     <div class="panel"><h3>Technical</h3><dl class="kv"><dt>Light source</dt><dd>${esc(t.light||"—")}</dd><dt>Bulb</dt><dd>${esc(t.bulb||"—")}</dd><dt>Switch</dt><dd>${esc(t.switchType||"—")}</dd><dt>Battery</dt><dd>${esc(t.battery||"—")}</dd><dt>Modifications</dt><dd>${esc(t.mods||"None recorded")}</dd><dt>Working</dt><dd>${esc(t.working||"—")}</dd></dl></div>
     <div class="panel"><h3>Condition</h3><dl class="kv"><dt>Grade</dt><dd>${esc(t.grade||"—")}</dd><dt>Originality</dt><dd>${esc(t.originality||"—")}</dd><dt>Notes</dt><dd>${esc(t.conditionNotes||"—")}</dd>${(t.missingParts||[]).length?`<dt>Missing parts</dt><dd>${esc(t.missingParts.join(", "))}</dd>`:""}${t.packaging?`<dt>Packaging</dt><dd>${esc(t.packaging)}</dd>`:""}</dl></div>
-    <div class="panel"><h3>Value</h3><dl class="kv"><dt>Estimate</dt><dd>${t.valueHigh?money(t.valueLow)+" – "+money(t.valueHigh)+" AUD":"—"}</dd><dt>Valued</dt><dd>${esc([t.valueDate?fmtDate(t.valueDate):"",t.valueSource].filter(Boolean).join(" · ")||"—")}</dd></dl></div>
+    <div class="panel"><h3>Value</h3><dl class="kv"><dt>Estimate</dt><dd>${showValue(t)}</dd>${curOf(t.valueCur)!=="AUD"&&!(blank(t.valueLow)&&blank(t.valueHigh))?`<dt>Exchange rate</dt><dd class="small">${esc(rateNote(t,"value"))}</dd>`:""}<dt>Valued</dt><dd>${esc([t.valueDate?fmtDate(t.valueDate):"",t.valueSource].filter(Boolean).join(" · ")||"—")}</dd></dl></div>
     ${(t.attachments||[]).length?`<div class="panel"><h3>Receipts & documents</h3>${t.attachments.map(a=>`<a data-fid="${esc(a.id)}" href="#" target="_blank" rel="noopener">${esc(a.name||"Document")}</a>`).join("<br>")}</div>`:""}
     ${t.writeup?`<div class="panel"><details class="writeup"><summary>AI write-up (reference only)</summary><pre>${esc(t.writeup)}</pre></details></div>`:""}
   </div>`);
@@ -380,91 +524,120 @@ function openDetail(id){
 const STATUSES=["In collection","Restoration project","For sale","Sold","Traded"], GRADES=["","Mint / NOS","Excellent","Good","User","Heavy wear"], ACQ=["","Second-hand","New (retail)","Gift","Free"],
   DSRC=["","Dating chart","Serial range","Chart + serial range","Mag Instrument","Pack date code","Receipt","My research"], TAGS=["Overall","Serial","Bezel","Barrel stamp","Reflector","Tail cap","Box / pack","Other"], ORIG=["","All original","Mixed parts","Modified"];
 const opt=(a,v)=>a.map(o=>`<option value="${esc(o)}"${o===(v??"")?" selected":""}>${esc(o||"—")}</option>`).join("");
-const fld=(n,l,v,type="text",x="")=>`<div class="field"><label for="f_${n}">${l}</label><input id="f_${n}" name="${n}" type="${type}" value="${esc(v??"")}" ${x}></div>`;
+const fld=(n,l,v,type="text",x="",cls="")=>`<div class="field${cls?" "+cls:""}">${lab(n,l)}<input id="f_${n}" name="${n}" type="${type}" value="${esc(v??"")}" ${x}></div>`;
+const sel=(n,l,arr,v,cls="")=>`<div class="field${cls?" "+cls:""}">${lab(n,l)}<select id="f_${n}" name="${n}">${opt(arr,v)}</select></div>`;
+const area=(n,l,v,x="")=>`<div class="field full">${lab(n,l)}<textarea id="f_${n}" name="${n}" ${x}>${esc(v)}</textarea></div>`;
 function openEdit(id){ const src=id?S.torches.find(x=>x.id===id):{classId:(S.classes[0]||{}).id,colour:"Black",status:"In collection",markings:{},photos:[],checks:[],attachments:[],missingParts:[]}; if(!src) return; S.sheet={kind:"edit",id:id||null,draft:clone(src),confirmDel:false}; drawEdit(); }
 function drawEdit(){
   const t=S.sheet.draft, g=guideOf(t), c=clsOf(t);
   const models=c?String(c.models||"").split(",").map(s=>s.trim()).filter(Boolean):[];
-  const marks=g?g.features.map(f=>`<div class="field"><label for="m_${esc(f.id)}">${esc(f.label)}</label><select id="m_${esc(f.id)}" data-mark="${esc(f.id)}"><option value="">Not recorded</option>${f.opts.map(o=>`<option value="${esc(o.id)}"${(t.markings||{})[f.id]===o.id?" selected":""}>${esc(o.label)}</option>`).join("")}</select></div>`).join(""):`<div class="full muted small">This class has no dating chart linked. Record the date manually below, or link a chart under More → Classes.</div>`;
+  const marks=g?g.features.map(f=>`<div class="field">${featLab(f,"m_"+f.id)}<select id="m_${esc(f.id)}" data-mark="${esc(f.id)}"><option value="">Not recorded</option>${f.opts.map(o=>`<option value="${esc(o.id)}"${(t.markings||{})[f.id]===o.id?" selected":""}>${esc(o.label)}</option>`).join("")}</select></div>`).join(""):`<div class="full muted small">This class has no dating chart linked. Record the date manually below, or link a chart under More → Classes.</div>`;
+  const pCur=curOf(t.priceCur), vCur=curOf(t.valueCur);
   openSheet(`<div class="sheet-head"><div class="wrap"><button class="btn ghost" type="button" data-cancel>Cancel</button><h2>${S.sheet.id?"Edit torch":"Add torch"}</h2><button class="btn primary" type="button" data-save>Save</button></div></div>
   <form class="wrap sheet-body" id="editForm" autocomplete="off"><div class="form">
     <div class="fs-title" style="border-top:0;margin-top:0;padding-top:0">Photos</div>
-    <div class="full"><div class="phgrid">${(t.photos||[]).map((p,i)=>`<div class="ph"><img data-fid="${esc(p.id)}" alt=""><button type="button" class="x" data-rmph="${i}" aria-label="Remove photo">×</button><select data-phtag="${i}" aria-label="Photo tag">${opt(TAGS,p.tag)}</select></div>`).join("")}</div>
+    <div class="full"><div class="phgrid">${(t.photos||[]).map((p,i)=>`<div class="ph"><img data-fid="${esc(p.id)}" alt=""><button type="button" class="x" data-rmph="${i}" aria-label="Remove photo">×</button>${i===0?`<span class="mainbadge">★ Main photo</span>`:`<button type="button" class="btn sm" data-mainph="${i}">Set as main</button>`}<button type="button" class="btn sm" data-editph="${i}">Crop / rotate</button><select data-phtag="${i}" aria-label="Photo tag">${opt(TAGS,p.tag)}</select></div>`).join("")}</div>
+      ${(t.photos||[]).length>1?`<div class="muted small" style="margin-top:4px">The main photo is shown on the collection card and first on the torch's page.</div>`:""}
       <div class="row" style="margin-top:8px"><label class="btn" for="phIn">Add photos</label><input id="phIn" type="file" accept="image/*" multiple hidden><span class="muted small" id="upStat"></span></div></div>
     <div class="fs-title">Identity</div>
-    <div class="field"><label for="f_classId">Class</label><select id="f_classId" name="classId">${S.classes.map(k=>`<option value="${esc(k.id)}"${t.classId===k.id?" selected":""}>${esc(k.name)}</option>`).join("")}</select></div>
-    <div class="field"><label for="f_model">Model</label><input id="f_model" name="model" list="models" value="${esc(t.model)}" placeholder="e.g. 4D"><datalist id="models">${models.map(m=>`<option value="${esc(m)}">`).join("")}</datalist></div>
+    <div class="field">${lab("classId","Class")}<select id="f_classId" name="classId">${S.classes.map(k=>`<option value="${esc(k.id)}"${t.classId===k.id?" selected":""}>${esc(k.name)}</option>`).join("")}</select></div>
+    <div class="field">${lab("model","Model")}<input id="f_model" name="model" list="models" value="${esc(t.model)}" placeholder="e.g. 4D"><datalist id="models">${models.map(m=>`<option value="${esc(m)}">`).join("")}</datalist></div>
     ${fld("cells","Cell count",t.cells,"number",'min="1" max="12" placeholder="From model"')}
     ${fld("partNo","Part / model number",t.partNo)}
     ${fld("colour","Colour",t.colour)}
     ${fld("serial","Serial number",t.serial,"text",'style="font-family:var(--f-mono)"')}
     ${fld("nickname","Nickname",t.nickname)}
-    <div class="field"><label for="f_status">Status</label><select id="f_status" name="status">${opt(STATUSES,t.status)}</select></div>
-    <div class="field full"><label for="f_notes">My notes</label><textarea id="f_notes" name="notes">${esc(t.notes)}</textarea></div>
+    ${sel("status","Status",STATUSES,t.status)}
+    ${area("notes","My notes",t.notes)}
     <div class="fs-title">Acquisition</div>
     ${fld("acqDate","Date acquired",t.acqDate,"date")}
-    <div class="field"><label for="f_acqType">Type</label><select id="f_acqType" name="acqType">${opt(ACQ,t.acqType)}</select></div>
+    ${sel("acqType","Type",ACQ,t.acqType)}
     ${fld("source","Source",t.source,"text",'placeholder="Marketplace, Amazon, garage sale…"')}
     ${fld("location","Location / seller",t.location)}
-    ${fld("price","Price paid (AUD)",t.price,"number",'min="0" step="0.01"')}
+    ${fld("price","Total paid incl. postage",t.price,"number",'min="0" step="0.01" inputmode="decimal"')}
+    ${sel("priceCur","Currency paid in",CURRENCIES,pCur)}
+    <div class="field full" id="priceAudWrap" ${pCur==="AUD"?"hidden":""}>${lab("priceAud","AUD equivalent")}<div class="row"><input id="f_priceAud" name="priceAud" type="number" min="0" step="0.01" inputmode="decimal" value="${esc(t.priceAud??"")}" style="max-width:180px"><button type="button" class="btn sm" data-userate="price">Use exchange rate</button></div><div class="muted small" id="priceRateNote">${esc(rateNote(t,"price"))}</div></div>
     ${fld("orderNo","Order number",t.orderNo)}
     ${fld("boughtWith","Bought with",t.boughtWith)}
     <div class="field" style="justify-content:flex-end;gap:8px"><label class="check-inline"><input type="checkbox" name="acqDateApprox" ${t.acqDateApprox?"checked":""}> Date approximate</label><label class="check-inline"><input type="checkbox" name="priceApprox" ${t.priceApprox?"checked":""}> Price approximate</label></div>
-    <div class="fs-title">Markings${g?" · "+esc(g.name):""}</div>
+    <div class="fs-title">Markings${g?" · "+esc(g.name):""} ${infoBtn("markings")}</div><div class="help full" id="h_markings" hidden>${esc(HELP.markings)}</div>
     ${marks}
     <div class="fs-title">Dating</div>
     ${fld("myFrom","My estimate — from (year)",t.myFrom,"number",'min="1900" max="2100"')}
     ${fld("myTo","My estimate — to (year)",t.myTo,"number",'min="1900" max="2100"')}
-    <div class="field"><label for="f_datingSource">Dating source</label><select id="f_datingSource" name="datingSource">${opt(DSRC,t.datingSource)}</select></div>
-    <div class="field" style="justify-content:flex-end"><label class="check-inline"><input type="checkbox" name="myOpen" ${t.myOpen?"checked":""}> Open-ended (e.g. 1996+)</label></div>
+    ${sel("datingSource","Dating source",DSRC,t.datingSource)}
+    <div class="field" style="justify-content:flex-end"><div class="lblrow"><label class="check-inline"><input type="checkbox" name="myOpen" ${t.myOpen?"checked":""}> Open-ended (e.g. 1996+)</label>${infoBtn("myOpen")}</div><div class="help" id="h_myOpen" hidden>${esc(HELP.myOpen)}</div></div>
     ${fld("wuFrom","Write-up estimate — from",t.wuFrom,"number")}
     ${fld("wuTo","Write-up estimate — to",t.wuTo,"number")}
-    <div class="field full"><label for="f_datingNotes">Dating notes</label><textarea id="f_datingNotes" name="datingNotes">${esc(t.datingNotes)}</textarea></div>
+    ${area("datingNotes","Dating notes",t.datingNotes)}
     <div class="fs-title">Technical</div>
     ${fld("light","Light source",t.light,"text",'list="lights"')}<datalist id="lights"><option value="Incandescent (krypton)"><option value="Incandescent (xenon)"><option value="Halogen"><option value="LED"></datalist>
     ${fld("bulb","Bulb / part no.",t.bulb)}
     ${fld("switchType","Switch",t.switchType,"text",'list="switches"')}<datalist id="switches"><option value="Mechanical"><option value="Electronic (QuickClik)"></datalist>
     ${fld("battery","Battery",t.battery,"text",'list="batts"')}<datalist id="batts"><option value="Alkaline cells"><option value="NiCd stick"><option value="NiMH stick"></datalist>
     ${fld("mods","Modifications",t.mods)}
-    <div class="field"><label for="f_working">Working</label><select id="f_working" name="working">${opt(["","Yes","No","Untested"],t.working)}</select></div>
+    ${sel("working","Working",["","Yes","No","Untested"],t.working)}
     <div class="fs-title">Condition</div>
-    <div class="field"><label for="f_grade">Grade</label><select id="f_grade" name="grade">${opt(GRADES,t.grade)}</select></div>
-    <div class="field"><label for="f_originality">Originality</label><select id="f_originality" name="originality">${opt(ORIG,t.originality)}</select></div>
+    ${sel("grade","Grade",GRADES,t.grade)}
+    ${sel("originality","Originality",ORIG,t.originality)}
     ${fld("missingParts","Missing parts (comma separated)",(t.missingParts||[]).join(", "))}
     ${fld("packaging","Packaging",t.packaging)}
-    <div class="field full"><label for="f_conditionNotes">Condition notes</label><textarea id="f_conditionNotes" name="conditionNotes">${esc(t.conditionNotes)}</textarea></div>
+    ${area("conditionNotes","Condition notes",t.conditionNotes)}
     <div class="fs-title">Value</div>
-    ${fld("valueLow","Estimate low (AUD)",t.valueLow,"number",'min="0"')}
-    ${fld("valueHigh","Estimate high (AUD)",t.valueHigh,"number",'min="0"')}
+    ${fld("valueLow","Estimate low",t.valueLow,"number",'min="0" inputmode="decimal"')}
+    ${fld("valueHigh","Estimate high",t.valueHigh,"number",'min="0" inputmode="decimal"')}
+    ${sel("valueCur","Currency of estimate",CURRENCIES,vCur)}
     ${fld("valueDate","Valuation date",t.valueDate,"date")}
-    ${fld("valueSource","Valuation source",t.valueSource)}
-    <div class="fs-title">Receipts & documents</div>
+    <div class="field full" id="valueAudWrap" ${vCur==="AUD"?"hidden":""}>${lab("valueAud","AUD equivalent (low – high)","f_valueLowAud")}<div class="row"><input id="f_valueLowAud" name="valueLowAud" type="number" min="0" inputmode="decimal" value="${esc(t.valueLowAud??"")}" style="max-width:130px" aria-label="AUD low"><span>–</span><input id="f_valueHighAud" name="valueHighAud" type="number" min="0" inputmode="decimal" value="${esc(t.valueHighAud??"")}" style="max-width:130px" aria-label="AUD high"><button type="button" class="btn sm" data-userate="value">Use exchange rate</button></div><div class="muted small" id="valueRateNote">${esc(rateNote(t,"value"))}</div></div>
+    ${fld("valueSource","Valuation source",t.valueSource,"text",'placeholder="e.g. eBay US sold, Oct 2026"',"full")}
+    <div class="fs-title">Receipts & documents ${infoBtn("attachments")}</div><div class="help full" id="h_attachments" hidden>${esc(HELP.attachments)}</div>
     <div class="full">${(t.attachments||[]).map((a,i)=>`<div class="row"><span style="flex:1;min-width:0">${esc(a.name)}</span><button type="button" class="btn ghost sm" data-rmatt="${i}">Remove</button></div>`).join("")||`<div class="muted small">None attached.</div>`}
       <div class="row" style="margin-top:8px"><label class="btn" for="attIn">Attach receipt (PDF or image)</label><input id="attIn" type="file" accept="application/pdf,image/*" hidden></div></div>
-    <div class="fs-title">To check</div>
-    <div class="full"><ul class="checks">${(t.checks||[]).map((k,i)=>`<li class="row"><span style="flex:1;min-width:0" class="${k.done?"done":""}">${esc(k.t)}</span><button type="button" class="btn ghost sm" data-rmchk="${i}">Remove</button></li>`).join("")}</ul>
-      <div class="row" style="margin-top:6px"><input id="newChk" class="search" placeholder="Add something to check…"><button type="button" class="btn" data-addchk>Add</button></div></div>
-    <div class="fs-title">AI write-up (reference)</div><div class="field full"><textarea id="f_writeup" name="writeup" style="min-height:120px">${esc(t.writeup)}</textarea></div>
+    <div class="fs-title">To check ${infoBtn("checks")}</div><div class="help full" id="h_checks" hidden>${esc(HELP.checks)}</div>
+    <div class="full"><ul class="checks">${(t.checks||[]).map((k,i)=>`<li class="row"><span style="flex:1;min-width:0"><span class="${k.done?"done":""}">${esc(k.t)}</span>${k.field?` <span class="muted small">· ${k.done&&k.autoDone?"cleared automatically":"clears when "+esc(checkFieldLabel(t,k.field))+" is filled in"}</span>`:""}</span><button type="button" class="btn ghost sm" data-rmchk="${i}">Remove</button></li>`).join("")}</ul>
+      <div class="chkadd"><input id="newChk" class="search" placeholder="Add something to check…" aria-label="New check item"><select id="newChkField" class="sel" aria-label="Clears when"><option value="">Tick it myself</option>${checkFieldChoices(t).map(([k,l])=>`<option value="${esc(k)}">Clears when: ${esc(l)}</option>`).join("")}</select><button type="button" class="btn" data-addchk>Add</button></div></div>
+    <div class="fs-title">AI write-up (reference)</div><div class="field full"><textarea id="f_writeup" name="writeup" style="min-height:120px" aria-label="AI write-up">${esc(t.writeup)}</textarea></div>
     ${S.sheet.id?`<div class="fs-title">Delete</div><div class="full row">${S.sheet.confirmDel?`<span>Delete this torch and its photos permanently?</span><button type="button" class="btn danger" data-delyes>Yes, delete</button><button type="button" class="btn ghost" data-delno>Keep it</button>`:`<button type="button" class="btn danger" data-del>Delete torch…</button>`}</div>`:""}
   </div></form>`);
 }
 function readForm(){
   const t=S.sheet.draft, f=$("#editForm"); if(!f) return t; const fd=new FormData(f);
   const num=k=>{ const v=fd.get(k); return v===""||v==null?null:Number(v); };
-  for(const k of ["classId","model","partNo","colour","serial","nickname","status","notes","acqDate","acqType","source","location","orderNo","boughtWith","datingSource","datingNotes","light","bulb","switchType","battery","mods","working","grade","originality","packaging","conditionNotes","valueDate","valueSource","writeup"]) t[k]=(fd.get(k)??"").toString().trim();
-  for(const k of ["cells","price","myFrom","myTo","wuFrom","wuTo","valueLow","valueHigh"]) t[k]=num(k);
+  for(const k of ["classId","model","partNo","colour","serial","nickname","status","notes","acqDate","acqType","source","location","orderNo","boughtWith","datingSource","datingNotes","light","bulb","switchType","battery","mods","working","grade","originality","packaging","conditionNotes","valueDate","valueSource","writeup","priceCur","valueCur"]) t[k]=(fd.get(k)??"").toString().trim();
+  for(const k of ["cells","price","myFrom","myTo","wuFrom","wuTo","valueLow","valueHigh","priceAud","valueLowAud","valueHighAud"]) t[k]=num(k);
   t.acqDateApprox=fd.get("acqDateApprox")==="on"; t.priceApprox=fd.get("priceApprox")==="on"; t.myOpen=fd.get("myOpen")==="on";
   t.missingParts=(fd.get("missingParts")||"").split(",").map(s=>s.trim()).filter(Boolean);
   t.markings=t.markings||{}; f.querySelectorAll("[data-mark]").forEach(s=>{ if(s.value) t.markings[s.dataset.mark]=s.value; else delete t.markings[s.dataset.mark]; });
   f.querySelectorAll("[data-phtag]").forEach(s=>{ t.photos[+s.dataset.phtag].tag=s.value; });
+  if(curOf(t.priceCur)==="AUD"){ t.priceAud=null; t.priceRate=null; t.priceRateDate=null; t.priceAudManual=false; }
+  if(curOf(t.valueCur)==="AUD"){ t.valueLowAud=null; t.valueHighAud=null; t.valueRate=null; t.valueRateDate=null; t.valueAudManual=false; }
   return t;
+}
+/* refresh the AUD equivalent shown in the edit form after price, currency or date changes */
+async function liveConvert(kind){
+  const t=readForm();
+  const wrap=$("#"+kind+"AudWrap"); if(!wrap) return;
+  const cur=curOf(kind==="price"?t.priceCur:t.valueCur); wrap.hidden=cur==="AUD"; if(cur==="AUD") return;
+  if(t[kind+"AudManual"]){ $("#"+kind+"RateNote").textContent=rateNote(t,kind); return; }
+  const date=kind==="price"?t.acqDate:t.valueDate;
+  $("#"+kind+"RateNote").textContent="Looking up the exchange rate…";
+  const r=await getRate(cur,date);
+  if(!S.sheet||S.sheet.kind!=="edit") return;
+  if(!r){ t[kind+"Rate"]=null; $("#"+kind+"RateNote").textContent=navigator.onLine===false?"Offline — the AUD amount will be filled in next time the app is online.":"Couldn't reach the exchange-rate service. Type the AUD amount, or it will be filled in later."; return; }
+  t[kind+"Rate"]=r.rate; t[kind+"RateDate"]=r.date;
+  if(kind==="price"){ t.priceAud=blank(t.price)?null:Math.round(t.price*r.rate*100)/100; $("#f_priceAud").value=t.priceAud??""; }
+  else { for(const k of ["valueLow","valueHigh"]){ t[k+"Aud"]=blank(t[k])?null:Math.round(t[k]*r.rate); $("#f_"+k+"Aud").value=t[k+"Aud"]??""; } }
+  $("#"+kind+"RateNote").textContent=rateNote(t,kind);
 }
 async function saveTorch(){
   const t=readForm(); const isNew=!S.sheet.id; if(isNew) t.id=uid("t");
+  if(pendingConv(t)) await convertTorch(t);
   if(S.sheet.removedFiles) for(const fid of S.sheet.removedFiles){ if(!S.torches.some(x=>x.id!==t.id&&[...(x.photos||[]),...(x.attachments||[])].some(p=>p.id===fid))) await dbDel("files",fid); }
+  const cleared=applyAutoChecks(t);
   t.updatedAt=new Date().toISOString();
-  await dbPut("torches",t); await reload(); closeSheet(); toast(isNew?"Torch added":"Saved"); askPersist();
-  if(isNew){ S.tab="collection"; render(); }
+  await dbPut("torches",t); await reload(); closeSheet(); toast((isNew?"Torch added":"Saved")+(cleared?` — ${cleared} check${cleared===1?"":"s"} cleared`:"")); askPersist();
+  if(isNew) S.tab="collection";
+  render(); openDetail(t.id);
 }
 async function deleteTorch(id){ const t=S.torches.find(x=>x.id===id); for(const p of [...(t.photos||[]),...(t.attachments||[])]) await dbDel("files",p.id); await dbDel("torches",id); await reload(); closeSheet(); toast("Torch deleted"); }
 async function resizeImage(file){ const bmp=await createImageBitmap(file); const s=Math.min(1,1600/Math.max(bmp.width,bmp.height)); const c=document.createElement("canvas"); c.width=Math.round(bmp.width*s); c.height=Math.round(bmp.height*s); c.getContext("2d").drawImage(bmp,0,0,c.width,c.height); return await new Promise(r=>c.toBlob(r,"image/jpeg",0.82)); }
@@ -489,7 +662,7 @@ function viewDateIt(){
       ${g.serial&&g.serial.enabled?`<div class="field"><label for="dtSerial">Serial (numbers only)</label><input id="dtSerial" style="font-family:var(--f-mono)" value="${esc(ds.serial)}" inputmode="numeric" placeholder="e.g. 40854663"></div>`:""}
     </div></div>
     ${res}${timeline(r.from,r.to,null,null,r.open)}
-    <div class="panel">${g.features.length?g.features.map(f=>`<div class="feat"><div><b>${esc(f.label)}</b>${f.note?` <span class="muted small">${esc(f.note)}</span>`:""}</div><div class="opts"><button type="button" class="opt" data-fk="${esc(f.id)}" data-fv="" aria-pressed="${!ds.marks[f.id]}">Not sure</button>${f.opts.map(o=>`<button type="button" class="opt${r.odd.includes(f.id)&&ds.marks[f.id]===o.id?" odd":""}" data-fk="${esc(f.id)}" data-fv="${esc(o.id)}" aria-pressed="${ds.marks[f.id]===o.id}">${esc(o.label)}<span class="muted" style="font-size:11.5px;display:block;font-family:var(--f-mono)">${esc(eraSpan(g,o.eras))}</span></button>`).join("")}</div></div>`).join(""):`<span class="muted">This chart has no features yet. Add them under More → Dating charts.</span>`}</div>
+    <div class="panel">${g.features.length?g.features.map(f=>`<div class="feat"><div class="lblrow"><b>${esc(f.label)}</b>${f.help?infoBtn("m_"+f.id):""}${f.note?` <span class="muted small">${esc(f.note)}</span>`:""}</div>${f.help?`<div class="help" id="h_m_${esc(f.id)}" hidden>${esc(f.help)}</div>`:""}<div class="opts"><button type="button" class="opt" data-fk="${esc(f.id)}" data-fv="" aria-pressed="${!ds.marks[f.id]}">Not sure</button>${f.opts.map(o=>`<button type="button" class="opt${r.odd.includes(f.id)&&ds.marks[f.id]===o.id?" odd":""}" data-fk="${esc(f.id)}" data-fv="${esc(o.id)}" aria-pressed="${ds.marks[f.id]===o.id}">${esc(o.label)}<span class="muted" style="font-size:11.5px;display:block;font-family:var(--f-mono)">${esc(eraSpan(g,o.eras))}</span></button>`).join("")}</div></div>`).join(""):`<span class="muted">This chart has no features yet. Add them under More → Dating charts.</span>`}</div>
     ${ds.torchId&&r.eras.length&&(r.used||r.serialUsed)?`<button type="button" class="btn primary" data-savedate>Save ${fmtRange(r.from,r.to,r.open)} and markings to this torch</button>`:""}
     ${ds.torchId&&!r.eras.length&&r.used?`<button type="button" class="btn" data-savemarks>Save markings only</button>`:""}
   </section>`;
@@ -498,7 +671,7 @@ async function saveDating(withRange){
   const ds=S.dateState, t=S.torches.find(x=>x.id===ds.torchId); if(!t) return; const g=S.guides.find(x=>x.id===ds.g);
   const r=runDating(g,ds.marks,ds.serial,ds.cells?+ds.cells:null); const n=clone(t); n.markings={...ds.marks};
   if(withRange){ n.myFrom=r.from; n.myTo=r.open?null:r.to; n.myOpen=r.open; n.datingSource=r.serialUsed&&r.used?"Chart + serial range":r.serialUsed?"Serial range":"Dating chart"; }
-  n.updatedAt=new Date().toISOString(); await dbPut("torches",n); await reload(); toast(withRange?"Date and markings saved":"Markings saved"); render();
+  const cl=applyAutoChecks(n); n.updatedAt=new Date().toISOString(); await dbPut("torches",n); await reload(); toast((withRange?"Date and markings saved":"Markings saved")+(cl?` — ${cl} check${cl===1?"":"s"} cleared`:"")); render();
 }
 
 /* ---------- To check ---------- */
@@ -507,7 +680,7 @@ function viewChecks(){
   if(!rows.length) return `<section class="view"><div class="empty">Nothing to check. Every torch has its details filled in.</div></section>`;
   return `<section class="view"><p class="muted" style="margin:0">${rows.length} torches have gaps or open questions. Tick an item when it's resolved.</p>
   ${rows.map(({t,man,auto})=>`<div class="panel"><h3><button type="button" class="btn ghost" data-open="${esc(t.id)}" style="padding:0;min-height:0;border:0;font:inherit;text-align:left">${esc(label(t))}</button><span class="sp"></span><span class="mono muted" style="font-size:12px">${esc(t.serial||"")}</span></h3>
-  <ul class="checks">${man.map(c=>`<li><label><input type="checkbox" data-chk="${esc(t.id)}" data-i="${c.i}"><span>${esc(c.t)}</span></label></li>`).join("")}${auto.map(a=>`<li class="muted small">• ${esc(a)}</li>`).join("")}</ul></div>`).join("")}</section>`;
+  <ul class="checks">${man.map(c=>`<li><label><input type="checkbox" data-chk="${esc(t.id)}" data-i="${c.i}"><span>${esc(c.t)}${c.field?` <span class="muted small">· clears when ${esc(checkFieldLabel(t,c.field))} is filled in</span>`:""}</span></label></li>`).join("")}${auto.map(a=>`<li class="muted small">• ${esc(a)}</li>`).join("")}</ul></div>`).join("")}</section>`;
 }
 async function toggleCheck(id,i,done){ const t=clone(S.torches.find(x=>x.id===id)); t.checks[i].done=done; await dbPut("torches",t); await reload(); if(S.tab==="check"&&!S.sheet) render(); else if(S.sheet&&S.sheet.kind==="detail") { const sc=$("#sheet").scrollTop; openDetail(id); $("#sheet").scrollTop=sc; } }
 
@@ -542,13 +715,13 @@ function barsOf(map,unit){ const e=Object.entries(map); const max=Math.max(1,...
 function viewStats(){
   const own=S.torches.filter(isOwned); const cnt=fn=>own.reduce((m,t)=>{const k=fn(t); m[k]=(m[k]||0)+1; return m;},{}); const desc=o=>Object.fromEntries(Object.entries(o).sort((a,b)=>b[1]-a[1]));
   const dec={}; own.forEach(t=>{ const k=t.myFrom==null?"Undated":Math.floor((t.myTo&&!t.myOpen?Math.round((t.myFrom+t.myTo)/2):t.myFrom)/10)*10+"s"; dec[k]=(dec[k]||0)+1; });
-  const spend={}; own.forEach(t=>{ if(t.price!=null&&t.price!==""){ const y=(t.acqDate||"").slice(0,4)||"Unknown"; spend[y]=(spend[y]||0)+(+t.price||0);} });
-  const priced=own.filter(t=>t.price!=null&&t.price!==""); const paid=priced.reduce((s,t)=>s+(+t.price||0),0);
-  return `<section class="view">${backMore}<div class="summary"><div><span class="lbl">Torches</span><b>${own.length}</b></div><div><span class="lbl">Paid</span><b>${money(paid)}</b></div><div><span class="lbl">Avg paid</span><b>${money(priced.length?paid/priced.length:0)}</b></div></div>
+  const spend={}; own.forEach(t=>{ const a=priceAUD(t); if(a!=null){ const y=(t.acqDate||"").slice(0,4)||"Unknown"; spend[y]=(spend[y]||0)+a;} });
+  const priced=own.filter(t=>priceAUD(t)!=null); const paid=priced.reduce((s,t)=>s+priceAUD(t),0);
+  return `<section class="view">${backMore}<p class="muted small" style="margin:0">All amounts in AUD.</p><div class="summary"><div><span class="lbl">Torches</span><b>${own.length}</b></div><div><span class="lbl">Paid</span><b>${money(paid)}</b></div><div><span class="lbl">Avg paid</span><b>${money(priced.length?paid/priced.length:0)}</b></div></div>
   <div class="panel"><h3>By class</h3>${barsOf(desc(cnt(t=>(clsOf(t)||{}).name||"No class")))}</div>
   <div class="panel"><h3>By decade made</h3><p class="muted small" style="margin:0">Midpoint of your production estimate.</p>${barsOf(Object.fromEntries(Object.entries(dec).sort()))}</div>
   <div class="panel"><h3>By colour</h3>${barsOf(desc(cnt(t=>t.colour||"Unknown")))}</div>
-  <div class="panel"><h3>Spend by year acquired</h3>${Object.keys(spend).length?barsOf(Object.fromEntries(Object.entries(spend).sort()),"$"):`<span class="muted">No prices recorded.</span>`}</div></section>`;
+  <div class="panel"><h3>Spend by year acquired (AUD)</h3>${Object.keys(spend).length?barsOf(Object.fromEntries(Object.entries(spend).sort()),"$"):`<span class="muted">No prices recorded.</span>`}</div></section>`;
 }
 function viewAbout(){
   return `<section class="view">${backMore}<div class="panel"><h3>Where your data lives</h3><p style="margin:0">Everything — torches, photos, receipts, classes and charts — is stored in this browser on this phone. Nothing is sent anywhere. The app works offline once installed.</p>
@@ -614,7 +787,7 @@ function drawGuideEdit(){
       <div class="edrow small muted"><span>Label</span><span>From</span><span>To</span><span></span></div>
       ${g.eras.map((e,i)=>`<div class="edrow"><input class="inp" data-era="${i}" data-k="label" value="${esc(e.label)}" placeholder="${esc(fmtRange(e.from,e.to,e.to==null&&e.from!=null))}" aria-label="Era label"><input class="inp mono" inputmode="numeric" maxlength="4" data-era="${i}" data-k="from" value="${e.from??""}" aria-label="From year"><input class="inp mono" inputmode="numeric" maxlength="4" data-era="${i}" data-k="to" value="${e.to??""}" aria-label="To year"><button type="button" class="btn ghost sm" data-rmera="${i}" aria-label="Remove era">✕</button></div>`).join("")}</div>
     ${g.features.map((f,fi)=>`<div class="panel"><h3>Feature<span class="sp"></span><button type="button" class="btn ghost sm" data-rmfeat="${fi}">Remove feature</button></h3>
-      <div class="form"><div class="field"><label>Feature name</label><input class="inp" data-feat="${fi}" data-k="label" value="${esc(f.label)}" placeholder="e.g. Bezel mark"></div><div class="field"><label>Hint (optional)</label><input class="inp" data-feat="${fi}" data-k="note" value="${esc(f.note)}" placeholder="e.g. Pre-1992 lights only"></div></div>
+      <div class="form"><div class="field"><label>Feature name</label><input class="inp" data-feat="${fi}" data-k="label" value="${esc(f.label)}" placeholder="e.g. Bezel mark"></div><div class="field"><label>Short hint (optional)</label><input class="inp" data-feat="${fi}" data-k="note" value="${esc(f.note)}" placeholder="e.g. Pre-1992 lights only"></div><div class="field full"><label>Description — shown when you tap ⓘ</label><textarea class="inp" data-feat="${fi}" data-k="help" rows="3" placeholder="What to look for and how to tell the options apart">${esc(f.help||"")}</textarea></div></div>
       <p class="muted small" style="margin:0">Tick the eras each option appears in.</p>
       <div class="gtable"><table>${head}<tbody>${f.opts.map((o,oi)=>`<tr><td><input class="inp" data-opt="${fi}:${oi}" value="${esc(o.label)}" placeholder="Option, e.g. Panther TM" style="min-width:150px"></td>${g.eras.map(e=>`<td><input type="checkbox" data-oera="${fi}:${oi}:${esc(e.id)}" ${o.eras.includes(e.id)?"checked":""} aria-label="${esc(o.label)} in ${esc(eraLabel(e))}"></td>`).join("")}<td><button type="button" class="btn ghost sm" data-rmopt="${fi}:${oi}" aria-label="Remove option">✕</button></td></tr>`).join("")}</tbody></table></div>
       <div><button type="button" class="btn sm" data-addopt="${fi}">+ Option</button></div></div>`).join("")}
@@ -690,17 +863,94 @@ async function doRestore(){
   let n=0; for(const f of data.files){ const z=zip.file(f.path); if(!z) continue; const b=await z.async("blob"); await dbPut("files",{id:f.id,type:f.type,name:f.name,blob:new Blob([b],{type:f.type})}); if(++n%10===0) st.textContent=`Restoring photos ${n} of ${data.files.length}…`; }
   for(const c of data.classes) await dbPut("classes",c); for(const g of data.guides) await dbPut("guides",g); for(const t of data.torches) await dbPut("torches",t); for(const w of (data.wanted||[])) await dbPut("wanted",w);
   S.meta.lastBackup=data.exportedAt; await dbPut("meta",{id:"main",...S.meta});
-  _restore=null; await reload(); askPersist(); S.tab="collection"; S.dateState=null; render(); toast(`Restored ${data.torches.length} torches`);
+  _restore=null; await reload(); await migrateData(); askPersist(); S.tab="collection"; S.dateState=null; render(); toast(`Restored ${data.torches.length} torches`);
 }
 
 /* ---------- CSV ---------- */
-const CSV_COLS=[["class",t=>(clsOf(t)||{}).name||""],["model"],["colour"],["serial"],["partNo"],["nickname"],["status"],["acqDate"],["acqType"],["source"],["location"],["price"],["priceApprox"],["boughtWith"],["orderNo"],["myFrom"],["myTo"],["myOpen"],["datingSource"],["wuFrom"],["wuTo"],["light"],["bulb"],["switchType"],["battery"],["mods"],["working"],["grade"],["originality"],["missingParts",t=>(t.missingParts||[]).join("; ")],["packaging"],["conditionNotes"],["valueLow"],["valueHigh"],["valueDate"],["valueSource"],["markings",t=>{ const g=guideOf(t); return Object.entries(t.markings||{}).map(([k,v])=>{ const f=g&&g.features.find(x=>x.id===k); const o=f&&f.opts.find(x=>x.id===v); return (f?f.label:k)+": "+(o?o.label:v); }).join("; "); }],["openChecks",t=>(t.checks||[]).filter(c=>!c.done).map(c=>c.t).join(" | ")],["notes"],["photos",t=>(t.photos||[]).length]];
+const CSV_COLS=[["class",t=>(clsOf(t)||{}).name||""],["model"],["colour"],["serial"],["partNo"],["nickname"],["status"],["acqDate"],["acqType"],["source"],["location"],["priceOriginal",t=>t.price],["priceCurrency",t=>curOf(t.priceCur)],["priceAUD",t=>priceAUD(t)],["priceApprox"],["boughtWith"],["orderNo"],["myFrom"],["myTo"],["myOpen"],["datingSource"],["wuFrom"],["wuTo"],["light"],["bulb"],["switchType"],["battery"],["mods"],["working"],["grade"],["originality"],["missingParts",t=>(t.missingParts||[]).join("; ")],["packaging"],["conditionNotes"],["valueCurrency",t=>curOf(t.valueCur)],["valueLowOriginal",t=>t.valueLow],["valueHighOriginal",t=>t.valueHigh],["valueLowAUD",t=>valAUD(t,"valueLow")],["valueHighAUD",t=>valAUD(t,"valueHigh")],["valueDate"],["valueSource"],["markings",t=>{ const g=guideOf(t); return Object.entries(t.markings||{}).map(([k,v])=>{ const f=g&&g.features.find(x=>x.id===k); const o=f&&f.opts.find(x=>x.id===v); return (f?f.label:k)+": "+(o?o.label:v); }).join("; "); }],["openChecks",t=>(t.checks||[]).filter(c=>!c.done).map(c=>c.t).join(" | ")],["notes"],["photos",t=>(t.photos||[]).length]];
 function toCSV(){ const q=v=>{ v=v==null?"":String(v); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }; return "﻿"+[CSV_COLS.map(c=>c[0]).join(","),...S.torches.map(t=>CSV_COLS.map(([k,fn])=>q(fn?fn(t):t[k])).join(","))].join("\r\n"); }
 function viewExport(){ const url=URL.createObjectURL(new Blob([toCSV()],{type:"text/csv"})); return `<section class="view">${backMore}<div class="panel"><h3>Export CSV</h3><p style="margin:0">${S.torches.length} torches, ${CSV_COLS.length} columns. Opens in Excel. This is a spreadsheet copy, not a backup — photos aren't included and it can't be restored.</p><div class="row"><a class="btn primary" href="${url}" download="maglite-collection-${new Date().toISOString().slice(0,10)}.csv">Save CSV</a><button type="button" class="btn" data-copycsv>Copy CSV text</button></div><textarea class="csv" id="csvText" readonly aria-label="CSV text">${esc(toCSV().slice(1))}</textarea></div></section>`; }
+
+/* ================= photo crop & rotate ================= */
+let PE=null;
+async function openPhotoEditor(i){
+  readForm(); const p=S.sheet.draft.photos[i]; const f=await dbGet("files",p.id); if(!f){ toast("Photo not found."); return; }
+  const bmp=await createImageBitmap(f.blob);
+  const rc=document.createElement("canvas"); rc.width=bmp.width; rc.height=bmp.height; rc.getContext("2d").drawImage(bmp,0,0);
+  PE={i,rc,crop:{x:0,y:0,w:rc.width,h:rc.height},square:false,drag:null,changed:false};
+  const el=document.createElement("div"); el.id="pe"; el.setAttribute("role","dialog"); el.setAttribute("aria-label","Crop and rotate photo");
+  el.innerHTML=`<div class="bar1"><button type="button" class="btn" data-pe="cancel">Cancel</button><b>Crop &amp; rotate</b><button type="button" class="btn primary" data-pe="apply">Apply</button></div>
+  <div class="stage"><canvas id="peCanvas"></canvas></div>
+  <div class="tools"><button type="button" class="btn" data-pe="left">⟲ Rotate left</button><button type="button" class="btn" data-pe="right">Rotate right ⟳</button><button type="button" class="btn" data-pe="square" aria-pressed="false">Square</button><button type="button" class="btn" data-pe="reset">Reset crop</button></div>
+  <div class="muted small" style="text-align:center;color:#9aa4b0">Drag the box to move it; drag a corner to resize.</div>`;
+  document.body.appendChild(el);
+  const cv=$("#peCanvas");
+  cv.addEventListener("pointerdown",peDown); cv.addEventListener("pointermove",peMove); cv.addEventListener("pointerup",peUp); cv.addEventListener("pointercancel",peUp);
+  peLayout(); window.addEventListener("resize",peLayout);
+}
+function peLayout(){ if(!PE) return; const st=$("#pe .stage"), cv=$("#peCanvas"); const r=st.getBoundingClientRect(); const s=Math.min(r.width/PE.rc.width,r.height/PE.rc.height,1); PE.scale=s; const dpr=window.devicePixelRatio||1; cv.style.width=Math.round(PE.rc.width*s)+"px"; cv.style.height=Math.round(PE.rc.height*s)+"px"; cv.width=Math.round(PE.rc.width*s*dpr); cv.height=Math.round(PE.rc.height*s*dpr); PE.dpr=dpr; peDraw(); }
+function peDraw(){
+  const cv=$("#peCanvas"); if(!cv) return; const x=cv.getContext("2d"), k=PE.scale*PE.dpr, c=PE.crop;
+  x.setTransform(1,0,0,1,0,0); x.clearRect(0,0,cv.width,cv.height); x.drawImage(PE.rc,0,0,cv.width,cv.height);
+  x.fillStyle="rgba(0,0,0,.55)"; x.beginPath(); x.rect(0,0,cv.width,cv.height); x.rect(c.x*k,c.y*k,c.w*k,c.h*k); x.fill("evenodd");
+  x.strokeStyle="#f0a43a"; x.lineWidth=2*PE.dpr; x.strokeRect(c.x*k,c.y*k,c.w*k,c.h*k);
+  x.strokeStyle="rgba(255,255,255,.35)"; x.lineWidth=1*PE.dpr; for(const f of [1/3,2/3]){ x.beginPath(); x.moveTo((c.x+c.w*f)*k,c.y*k); x.lineTo((c.x+c.w*f)*k,(c.y+c.h)*k); x.moveTo(c.x*k,(c.y+c.h*f)*k); x.lineTo((c.x+c.w)*k,(c.y+c.h*f)*k); x.stroke(); }
+  x.fillStyle="#f0a43a"; const hs=14*PE.dpr; for(const [px,py] of [[c.x,c.y],[c.x+c.w,c.y],[c.x,c.y+c.h],[c.x+c.w,c.y+c.h]]) x.fillRect(px*k-hs/2,py*k-hs/2,hs,hs);
+}
+function pePt(e){ const r=e.target.getBoundingClientRect(); return {x:(e.clientX-r.left)/PE.scale,y:(e.clientY-r.top)/PE.scale}; }
+function peDown(e){ const p=pePt(e), c=PE.crop, tol=28/PE.scale; const corners=[["tl",c.x,c.y],["tr",c.x+c.w,c.y],["bl",c.x,c.y+c.h],["br",c.x+c.w,c.y+c.h]];
+  const hit=corners.find(([,cx,cy])=>Math.abs(p.x-cx)<tol&&Math.abs(p.y-cy)<tol);
+  if(hit) PE.drag={mode:hit[0],start:p,c0:{...c}}; else if(p.x>c.x&&p.x<c.x+c.w&&p.y>c.y&&p.y<c.y+c.h) PE.drag={mode:"move",start:p,c0:{...c}}; else return;
+  e.target.setPointerCapture(e.pointerId); e.preventDefault(); }
+function peMove(e){ if(!PE||!PE.drag) return; const p=pePt(e), d=PE.drag, W=PE.rc.width, H=PE.rc.height, min=Math.max(40,Math.min(W,H)*0.05); let {x,y,w,h}=d.c0; const dx=p.x-d.start.x, dy=p.y-d.start.y;
+  if(d.mode==="move"){ x=Math.min(Math.max(0,x+dx),W-w); y=Math.min(Math.max(0,y+dy),H-h); }
+  else { let x1=x,y1=y,x2=x+w,y2=y+h; if(d.mode[1]==="l") x1=Math.min(Math.max(0,x1+dx),x2-min); else x2=Math.max(Math.min(W,x2+dx),x1+min); if(d.mode[0]==="t") y1=Math.min(Math.max(0,y1+dy),y2-min); else y2=Math.max(Math.min(H,y2+dy),y1+min);
+    if(PE.square){ const s=Math.min(x2-x1,y2-y1); if(d.mode[1]==="l") x1=x2-s; else x2=x1+s; if(d.mode[0]==="t") y1=y2-s; else y2=y1+s; }
+    x=x1;y=y1;w=x2-x1;h=y2-y1; }
+  PE.crop={x,y,w,h}; PE.changed=true; peDraw(); }
+function peUp(){ if(PE) PE.drag=null; }
+function peRotate(dir){ const o=PE.rc, n=document.createElement("canvas"); n.width=o.height; n.height=o.width; const x=n.getContext("2d"); x.translate(n.width/2,n.height/2); x.rotate(dir*Math.PI/2); x.drawImage(o,-o.width/2,-o.height/2); PE.rc=n; PE.changed=true; peResetCrop(); peLayout(); }
+function peResetCrop(){ const W=PE.rc.width,H=PE.rc.height; if(PE.square){ const s=Math.min(W,H); PE.crop={x:(W-s)/2,y:(H-s)/2,w:s,h:s}; } else PE.crop={x:0,y:0,w:W,h:H}; }
+function peClose(){ window.removeEventListener("resize",peLayout); const el=$("#pe"); if(el) el.remove(); PE=null; }
+async function peApply(){
+  const c=PE.crop, s=Math.min(1,1600/Math.max(c.w,c.h)); const out=document.createElement("canvas"); out.width=Math.round(c.w*s); out.height=Math.round(c.h*s);
+  out.getContext("2d").drawImage(PE.rc,c.x,c.y,c.w,c.h,0,0,out.width,out.height);
+  const blob=await new Promise(r=>out.toBlob(r,"image/jpeg",0.86)); const id=uid("f"); await dbPut("files",{id,blob,type:"image/jpeg",name:id+".jpg"});
+  const ph=S.sheet.draft.photos[PE.i]; (S.sheet.removedFiles=S.sheet.removedFiles||[]).push(ph.id); (S.sheet.newFiles=S.sheet.newFiles||[]).push(id); ph.id=id;
+  peClose(); drawEdit(); toast("Photo updated — tap Save to keep it");
+}
+
+/* ================= one-time updates to data already on the phone ================= */
+async function migrateData(){
+  let gchanged=0, tchanged=0;
+  const defs=defaultGuides();
+  for(const g of S.guides){ const dg=defs.find(x=>x.id===g.id); if(!dg) continue; let ch=false;
+    for(const f of g.features){ const df=dg.features.find(x=>x.id===f.id); if(!df) continue;
+      if(f.help==null||f.help===""){ if(df.help){ f.help=df.help; ch=true; } }
+      const lu=(LABEL_UPDATES[g.id]||{})[f.id]; if(lu) for(const o of f.opts){ const u=lu[o.id]; if(u&&o.label===u[0]){ o.label=u[1]; ch=true; } } }
+    if(ch){ await dbPut("guides",g); gchanged++; } }
+  for(const t of S.torches){ let ch=false;
+    for(const c of (t.checks||[])){ if(c.field!==undefined) continue; let key=""; for(const [re,k] of CHECK_LINKS){ if(re.test(c.t)){ key=k; break; } }
+      c.field=(key&&!c.done&&!filled(t,key))?key:""; ch=true; }
+    if(ch){ await dbPut("torches",t); tchanged++; } }
+  if(gchanged||tchanged) await reload();
+}
+/* fill any AUD amounts still waiting for an exchange rate */
+let _converting=false;
+async function convertPending(){
+  if(_converting||navigator.onLine===false) return; _converting=true; let n=0;
+  try{ for(const t of S.torches.filter(pendingConv)){ const c=clone(t); if(await convertTorch(c)){ applyAutoChecks(c); await dbPut("torches",c); n++; } } }finally{ _converting=false; }
+  if(n){ await reload(); if(!S.sheet) render(); toast(`${n} foreign-currency amount${n===1?"":"s"} converted to AUD`); }
+}
+window.addEventListener("online",()=>convertPending());
 
 /* ================= events ================= */
 document.addEventListener("click",async e=>{
   const b=e.target.closest("button,a[data-dlbk]"); if(!b) return; const d=b.dataset;
+  if(d.help){ const h=document.getElementById("h_"+d.help); if(h){ h.hidden=!h.hidden; b.setAttribute("aria-expanded",String(!h.hidden)); } e.preventDefault(); return; }
+  if(d.pe){ if(d.pe==="cancel") peClose(); else if(d.pe==="apply") await peApply(); else if(d.pe==="left") peRotate(-1); else if(d.pe==="right") peRotate(1); else if(d.pe==="square"){ PE.square=!PE.square; b.setAttribute("aria-pressed",String(PE.square)); peResetCrop(); peDraw(); } else if(d.pe==="reset"){ peResetCrop(); peDraw(); } return; }
+  if(d.editph!=null){ await openPhotoEditor(+d.editph); return; }
+  if(d.userate){ const t=readForm(); t[d.userate+"AudManual"]=false; await liveConvert(d.userate); return; }
   if(d.tab){ S.tab=d.tab; if(d.tab==="more") S.moreView=null; render(); scrollTo(0,0); return; }
   if(d.cls){ S.cls=d.cls; render(); return; }
   if(d.open){ openDetail(d.open); return; }
@@ -709,10 +959,11 @@ document.addEventListener("click",async e=>{
   if("add" in d){ openEdit(null); return; }
   if("cancel" in d){ const id=S.sheet&&S.sheet.id; if(S.sheet&&S.sheet.newFiles) for(const f of S.sheet.newFiles) await dbDel("files",f); closeSheet(); if(id) openDetail(id); return; }
   if("save" in d){ b.disabled=true; try{ await saveTorch(); }catch(err){ toast("Couldn't save: "+(err&&err.message||err)); b.disabled=false; } return; }
+  if(d.mainph!=null){ readForm(); const ph=S.sheet.draft.photos; const [p]=ph.splice(+d.mainph,1); ph.unshift(p); drawEdit(); toast("Main photo set — tap Save to keep it"); return; }
   if(d.rmph!=null){ readForm(); const [p]=S.sheet.draft.photos.splice(+d.rmph,1); (S.sheet.removedFiles=S.sheet.removedFiles||[]).push(p.id); drawEdit(); return; }
   if(d.rmatt!=null){ readForm(); const [a]=S.sheet.draft.attachments.splice(+d.rmatt,1); (S.sheet.removedFiles=S.sheet.removedFiles||[]).push(a.id); drawEdit(); return; }
   if(d.rmchk!=null){ readForm(); S.sheet.draft.checks.splice(+d.rmchk,1); drawEdit(); return; }
-  if("addchk" in d){ const v=$("#newChk").value.trim(); if(!v) return; readForm(); (S.sheet.draft.checks=S.sheet.draft.checks||[]).push({t:v,done:false}); drawEdit(); return; }
+  if("addchk" in d){ const v=$("#newChk").value.trim(); if(!v) return; const fk=$("#newChkField").value; readForm(); (S.sheet.draft.checks=S.sheet.draft.checks||[]).push({t:v,done:false,field:fk}); drawEdit(); return; }
   if("del" in d){ readForm(); S.sheet.confirmDel=true; drawEdit(); return; }
   if("delno" in d){ readForm(); S.sheet.confirmDel=false; drawEdit(); return; }
   if("delyes" in d){ await deleteTorch(S.sheet.id); return; }
@@ -736,7 +987,7 @@ document.addEventListener("click",async e=>{
   if("gsave" in d){ await saveGuide(); return; }
   if("addera" in d){ const g=readGuide(); const last=g.eras[g.eras.length-1]; g.eras.push({id:uid("e"),from:last&&last.to!=null?last.to+1:null,to:null,label:""}); drawGuideEdit(); return; }
   if(d.rmera!=null){ const g=readGuide(); const [e1]=g.eras.splice(+d.rmera,1); g.features.forEach(f=>f.opts.forEach(o=>o.eras=o.eras.filter(x=>x!==e1.id))); Object.values(g.serial.ranges).forEach(r=>delete r[e1.id]); drawGuideEdit(); return; }
-  if("addfeat" in d){ const g=readGuide(); g.features.push({id:uid("ft"),label:"",note:"",opts:[{id:uid("o"),label:"",eras:[]}]}); drawGuideEdit(); return; }
+  if("addfeat" in d){ const g=readGuide(); g.features.push({id:uid("ft"),label:"",note:"",help:"",opts:[{id:uid("o"),label:"",eras:[]}]}); drawGuideEdit(); return; }
   if(d.rmfeat!=null){ const g=readGuide(); g.features.splice(+d.rmfeat,1); drawGuideEdit(); return; }
   if(d.addopt!=null){ const g=readGuide(); g.features[+d.addopt].opts.push({id:uid("o"),label:"",eras:[]}); drawGuideEdit(); return; }
   if(d.rmopt){ const g=readGuide(); const [fi,oi]=d.rmopt.split(":").map(Number); g.features[fi].opts.splice(oi,1); drawGuideEdit(); return; }
@@ -754,6 +1005,7 @@ document.addEventListener("click",async e=>{
 });
 $("#addBtn").addEventListener("click",()=>openEdit(null));
 document.addEventListener("input",e=>{
+  if(S.sheet&&S.sheet.kind==="edit"){ const id=e.target.id; if(id==="f_priceAud"){ S.sheet.draft.priceAudManual=true; const n=$("#priceRateNote"); if(n) n.textContent="Entered by you."; } if(id==="f_valueLowAud"||id==="f_valueHighAud"){ S.sheet.draft.valueAudManual=true; const n=$("#valueRateNote"); if(n) n.textContent="Entered by you."; } }
   if(e.target.id==="search"){ S.q=e.target.value; const pos=e.target.selectionStart; render(); const s=$("#search"); s.focus(); try{s.setSelectionRange(pos,pos);}catch{} }
   if(e.target.id==="dtSerial"){ S.dateState.serial=e.target.value.replace(/\s/g,""); clearTimeout(S._st); S._st=setTimeout(()=>{ render(); const s=$("#dtSerial"); if(s){ s.focus(); const l=s.value.length; s.setSelectionRange(l,l);} },400); }
 });
@@ -763,6 +1015,8 @@ document.addEventListener("change",async e=>{
   if(el.id==="dtTorch"){ const t=S.torches.find(x=>x.id===el.value); S.dateState={g:S.dateState.g,marks:t?{...(t.markings||{})}:{},serial:t&&/^\d{6,9}$/.test(t.serial||"")?t.serial:"",cells:t?cellsOf(t)||"":"",torchId:t?t.id:""}; render(); }
   if(el.dataset.chk){ await toggleCheck(el.dataset.chk,+el.dataset.i,el.checked); }
   if(el.id==="f_classId"){ readForm(); drawEdit(); }
+  if(["f_price","f_priceCur","f_acqDate"].includes(el.id)) await liveConvert("price");
+  if(["f_valueLow","f_valueHigh","f_valueCur","f_valueDate"].includes(el.id)) await liveConvert("value");
   if(el.id==="phIn"&&el.files.length){ const fs=[...el.files]; const before=new Set((S.sheet.draft.photos||[]).map(p=>p.id)); await addPhotos(fs); (S.sheet.newFiles=S.sheet.newFiles||[]).push(...S.sheet.draft.photos.filter(p=>!before.has(p.id)).map(p=>p.id)); }
   if(el.id==="attIn"&&el.files.length){ await addAttachment(el.files[0]); const a=S.sheet.draft.attachments; (S.sheet.newFiles=S.sheet.newFiles||[]).push(a[a.length-1].id); }
   if(el.id==="restoreIn"&&el.files.length){ await readRestore(el.files[0]); el.value=""; }
@@ -773,7 +1027,7 @@ document.addEventListener("submit",async e=>{
   await dbPut("wanted",{id:uid("w"),model,colour:(fd.get("w_colour")||"").trim(),target:tg===""?null:Number(tg),priority:fd.get("w_priority"),notes:(fd.get("w_notes")||"").trim(),got:false,addedAt:new Date().toISOString()});
   await reload(); render(); toast("Added to wanted list");
 });
-document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&S.sheet){ closeSheet(); render(); } });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&PE){ peClose(); return; } if(e.key==="Escape"&&S.sheet){ closeSheet(); render(); } });
 
 /* ================= boot ================= */
 async function reload(){ [S.torches,S.wanted,S.classes,S.guides]=await Promise.all(["torches","wanted","classes","guides"].map(dbAll)); const m=await dbGet("meta","main"); S.meta=m?(({id,...r})=>r)(m):{}; }
@@ -781,7 +1035,9 @@ async function reload(){ [S.torches,S.wanted,S.classes,S.guides]=await Promise.a
   try{ await openDB(); }catch(e){ $("#main").innerHTML=`<section class="view"><div class="empty">This browser can't store data for the app (private mode or storage blocked). Open it in normal Chrome.</div></section>`; return; }
   await reload();
   if(!S.classes.length&&!S.guides.length){ for(const g of defaultGuides()) await dbPut("guides",g); for(const c of defaultClasses()) await dbPut("classes",c); await reload(); }
+  await migrateData();
   render();
+  convertPending();
   if("serviceWorker" in navigator && location.protocol!=="file:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 })();
 </script>
