@@ -317,6 +317,9 @@ const guideOf=t=>{ const c=clsOf(t); return c&&c.guideId? S.guides.find(g=>g.id=
 function label(t){ return [t.model,t.colour].filter(Boolean).join(" ")||"Untitled torch"; }
 function fmtDate(d){ if(!d) return "—"; const [y,m,dd]=d.split("-"); return dd?`${+dd} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]} ${y}`:d; }
 function fmtRange(from,to,open){ if(from==null) return "—"; if(open) return from+"+"; if(to==null||to===from) return String(from); return from+"–"+to; }
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+function madeLong(t){ if(t.prodMonth&&/^\d{4}-\d{2}$/.test(t.prodMonth)){ const [y,m]=t.prodMonth.split("-"); return MONTHS[+m-1]+" "+y; } return fmtRange(t.myFrom,t.myTo,t.myOpen); }
+function madeShort(t){ if(t.prodMonth&&/^\d{4}-\d{2}$/.test(t.prodMonth)){ const [y,m]=t.prodMonth.split("-"); return MONTHS[+m-1].slice(0,3)+" "+y; } return fmtRange(t.myFrom,t.myTo,t.myOpen); }
 function cellsOf(t){ if(t.cells) return +t.cells; const m=String(t.model||"").match(/^(\d)/); return m?+m[1]:null; }
 function voltsOf(t){ const c=clsOf(t); if(!c) return "—"; if(c.packVoltage) return `${c.packVoltage} V pack`; const n=cellsOf(t); return n&&c.cellVoltage? `${+(n*c.cellVoltage).toFixed(2)} V (${n} × ${c.cellType||""})`:"—"; }
 const isOwned=t=>!["Sold","Traded"].includes(t.status);
@@ -383,6 +386,7 @@ const HELP={
   markings:"What you can see on the torch, using the dating chart linked to this class. Leave “Not recorded” if you can't tell. Date it uses these.",
   myFrom:"Your production estimate — the first possible year. Use Date it to work it out from the markings.",
   myTo:"The last possible year. Leave empty for a single year.",
+  prodMonth:"The confirmed month and year of manufacture, e.g. from a Mag Instrument serial-number enquiry. When filled in it is shown instead of the estimate, and the estimate years are set to match when you save.",
   datingSource:"Where the estimate came from. Dating chart: from markings. Serial range: from the pre-1992 serial tables. Mag Instrument: their reply to a serial enquiry. Pack date code: printed on the packaging. Receipt: purchase paperwork.",
   myOpen:"Tick for a range that runs to today, e.g. 1996+.",
   wuFrom:"What the AI write-up estimated, kept for comparison only.",
@@ -413,12 +417,12 @@ const lab=(k,text,forId)=>!HELP[k]?`<label for="${esc(forId||"f_"+k)}">${text}</
 const featLab=(f,forId)=>f.help?`<div class="lblrow"><label${forId?` for="${esc(forId)}"`:""}>${esc(f.label)}</label>${infoBtn("m_"+f.id)}</div><div class="help" id="h_m_${esc(f.id)}" hidden>${esc(f.help)}</div>`:`<label${forId?` for="${esc(forId)}"`:""}>${esc(f.label)}</label>`;
 
 /* ================= self-clearing checks ================= */
-const CHECK_FIELDS=[["acqDate","Date acquired"],["price","Price paid"],["source|location","Source or seller"],["acqType","Acquisition type"],["photos","A photo"],["serial","Serial"],["partNo","Part / model number"],["grade","Grade"],["originality","Originality"],["myFrom","Production estimate"],["valueHigh","Value estimate"],["packaging","Packaging"],["light","Light source"],["working","Working"]];
+const CHECK_FIELDS=[["prodMonth","Exact production date"],["acqDate","Date acquired"],["price","Price paid"],["source|location","Source or seller"],["acqType","Acquisition type"],["photos","A photo"],["serial","Serial"],["partNo","Part / model number"],["grade","Grade"],["originality","Originality"],["myFrom","Production estimate"],["valueHigh","Value estimate"],["packaging","Packaging"],["light","Light source"],["working","Working"]];
 function checkFieldChoices(t){ const g=guideOf(t); return [...CHECK_FIELDS,...(g?g.features.map(f=>["markings."+f.id,f.label]):[])]; }
 function checkFieldLabel(t,key){ if(!key) return ""; const hit=checkFieldChoices(t).find(c=>c[0]===key); if(hit) return hit[1]; return key.startsWith("markings.")?key.slice(9):key; }
 function filled(t,key){ return key.split("|").some(k=> k==="photos"?(t.photos||[]).length>0 : k.startsWith("markings.")?!!(t.markings||{})[k.slice(9)] : !blank(t[k])); }
 function applyAutoChecks(t){ let n=0; for(const c of (t.checks||[])){ if(c.field&&!c.done&&filled(t,c.field)){ c.done=true; c.autoDone=todayISO(); n++; } } return n; }
-const CHECK_LINKS=[[/^bezel/i,"markings.bezel"],[/end cap:/i,"markings.endCap"],[/^barrel stamp/i,"markings.barrelStamp"],[/grip length/i,"markings.gripLength"],[/switch retainer/i,"markings.retainer"],[/switch screws/i,"markings.screws"],[/^condition grade/i,"grade"],[/^seller \/ location/i,"source|location"],[/^source type/i,"acqType"],[/^(overall photo|take photos)/i,"photos"],[/^confirm acquisition date \(/i,"acqDate"],[/^amazon order (date and price|number, date and price)/i,"price"]];
+const CHECK_LINKS=[[/^ask mag instrument/i,"prodMonth"],[/^bezel/i,"markings.bezel"],[/end cap:/i,"markings.endCap"],[/^barrel stamp/i,"markings.barrelStamp"],[/grip length/i,"markings.gripLength"],[/switch retainer/i,"markings.retainer"],[/switch screws/i,"markings.screws"],[/^condition grade/i,"grade"],[/^seller \/ location/i,"source|location"],[/^source type/i,"acqType"],[/^(overall photo|take photos)/i,"photos"],[/^confirm acquisition date \(/i,"acqDate"],[/^amazon order (date and price|number, date and price)/i,"price"]];
 
 /* file blobs → object URLs */
 async function urlFor(id){ if(!id) return ""; if(S.urls[id]) return S.urls[id]; const f=await dbGet("files",id); if(!f) return ""; S.urls[id]=URL.createObjectURL(f.blob); return S.urls[id]; }
@@ -473,7 +477,7 @@ function viewCollection(){
   const paid=own.reduce((s,t)=>s+(priceAUD(t)||0),0), vlo=own.reduce((s,t)=>s+(valAUD(t,"valueLow")||0),0), vhi=own.reduce((s,t)=>s+(valAUD(t,"valueHigh")||0),0), pend=own.filter(pendingConv).length;
   const q=S.q.trim().toLowerCase();
   let list=S.torches.filter(t=>S.cls==="all"||t.classId===S.cls);
-  if(q) list=list.filter(t=>[t.model,t.colour,t.serial,t.nickname,t.partNo,t.source,t.location,t.status,t.notes,(clsOf(t)||{}).name,fmtRange(t.myFrom,t.myTo,t.myOpen)].join(" ").toLowerCase().includes(q));
+  if(q) list=list.filter(t=>[t.model,t.colour,t.serial,t.nickname,t.partNo,t.source,t.location,t.status,t.notes,(clsOf(t)||{}).name,madeLong(t)].join(" ").toLowerCase().includes(q));
   const sorters={model:(a,b)=>label(a).localeCompare(label(b),undefined,{numeric:true}),oldest:(a,b)=>(a.myFrom??9999)-(b.myFrom??9999),acquired:(a,b)=>String(b.acqDate||"").localeCompare(String(a.acqDate||"")),value:(a,b)=>(valAUD(b,"valueHigh")||0)-(valAUD(a,"valueHigh")||0)};
   list.sort(sorters[S.sort]);
   const used=S.classes.filter(c=>S.torches.some(t=>t.classId===c.id));
@@ -489,7 +493,7 @@ function viewCollection(){
 function card(t){ const ph=(t.photos||[])[0], oc=openChecks(t);
   return `<button type="button" class="card" data-open="${esc(t.id)}">${ph?(ph.frame?`<span class="thumb fr"><img data-fid="${esc(ph.id)}" alt="" style="width:${100/ph.frame.w}%;height:${100/ph.frame.h}%;left:${-ph.frame.x/ph.frame.w*100}%;top:${-ph.frame.y/ph.frame.h*100}%"></span>`:`<img class="thumb" data-fid="${esc(ph.id)}" alt="">`):`<div class="thumb none">No photo</div>`}
   <div style="min-width:0"><h3>${esc(label(t))}</h3><div class="serial mono">${t.serial?esc(t.serial):"<span class='muted'>No serial</span>"}</div>
-  <div class="tags">${t.myFrom!=null?`<span class="tag era">${esc(fmtRange(t.myFrom,t.myTo,t.myOpen))}</span>`:""}${t.nickname?`<span class="tag">${esc(t.nickname)}</span>`:""}${t.status&&t.status!=="In collection"?`<span class="tag st">${esc(t.status)}</span>`:""}${oc?`<span class="tag flag">${oc} to check</span>`:""}</div></div></button>`; }
+  <div class="tags">${t.prodMonth||t.myFrom!=null?`<span class="tag era">${esc(madeShort(t))}</span>`:""}${t.nickname?`<span class="tag">${esc(t.nickname)}</span>`:""}${t.status&&t.status!=="In collection"?`<span class="tag st">${esc(t.status)}</span>`:""}${oc?`<span class="tag flag">${oc} to check</span>`:""}</div></div></button>`; }
 function timeline(from,to,wf,wt,open){
   const lo=1979,hi=Math.max(NOW,2026),span=hi-lo+1,pct=y=>((y-lo)/span*100).toFixed(2);
   const ticks=[1980,1990,2000,2010,2020].map(y=>`<span class="tick" style="left:${pct(y)}%">${y}</span>`).join("");
@@ -511,7 +515,7 @@ function openDetail(id){
     <div class="row">${t.serial?`<span class="serialplate">${esc(t.serial)}</span>`:""}${t.nickname?`<span class="tag">“${esc(t.nickname)}”</span>`:""}<span class="tag st">${esc(t.status||"In collection")}</span></div>
     ${t.notes?`<div class="note"><span class="lbl">My notes</span><br>${esc(t.notes).replace(/\n/g,"<br>")}</div>`:""}
     <div class="panel"><h3>Production date<span class="sp"></span><button class="btn" type="button" data-dateit="${esc(t.id)}">Date it</button></h3>
-      <div style="font:700 30px/1 var(--f-display)" class="num">${esc(fmtRange(t.myFrom,t.myTo,t.myOpen))}</div>
+      <div style="font:700 30px/1 var(--f-display)" class="num">${esc(madeLong(t))}</div>${t.prodMonth?`<div class="small" style="color:var(--ok);font-weight:600">✓ Exact production date${t.datingSource?" · "+esc(t.datingSource):""}</div>`:""}
       ${timeline(t.myFrom,t.myTo,t.wuFrom,t.wuTo,t.myOpen)}
       <div class="legend"><span><i style="background:var(--beam)"></i>My estimate${t.datingSource?" · "+esc(t.datingSource):""}</span>${t.wuFrom!=null?`<span><i style="background:var(--ink-3)"></i>Write-up said ${esc(fmtRange(t.wuFrom,t.wuTo))}</span>`:""}</div>
       ${t.datingNotes?`<div class="small" style="color:var(--ink-2)">${esc(t.datingNotes).replace(/\n/g,"<br>")}</div>`:""}
@@ -573,6 +577,7 @@ function drawEdit(){
     <div class="fs-title">Markings${g?" · "+esc(g.name):""} ${infoBtn("markings")}</div><div class="help full" id="h_markings" hidden>${esc(HELP.markings)}</div>
     ${marks}
     <div class="fs-title">Dating</div>
+    ${fld("prodMonth","Exact production date (month and year)",t.prodMonth,"month",'min="1979-01" placeholder="YYYY-MM"',"full")}
     ${fld("myFrom","My estimate — from (year)",t.myFrom,"number",'min="1900" max="2100"')}
     ${fld("myTo","My estimate — to (year)",t.myTo,"number",'min="1900" max="2100"')}
     ${sel("datingSource","Dating source",DSRC,t.datingSource)}
@@ -613,7 +618,7 @@ function drawEdit(){
 function readForm(){
   const t=S.sheet.draft, f=$("#editForm"); if(!f) return t; const fd=new FormData(f);
   const num=k=>{ const v=fd.get(k); return v===""||v==null?null:Number(v); };
-  for(const k of ["classId","model","partNo","colour","serial","nickname","status","notes","acqDate","acqType","source","location","orderNo","boughtWith","datingSource","datingNotes","light","bulb","switchType","battery","mods","working","grade","originality","packaging","conditionNotes","valueDate","valueSource","writeup","priceCur","valueCur"]) t[k]=(fd.get(k)??"").toString().trim();
+  for(const k of ["classId","model","partNo","colour","serial","nickname","status","notes","acqDate","acqType","source","location","orderNo","boughtWith","datingSource","datingNotes","prodMonth","light","bulb","switchType","battery","mods","working","grade","originality","packaging","conditionNotes","valueDate","valueSource","writeup","priceCur","valueCur"]) t[k]=(fd.get(k)??"").toString().trim();
   for(const k of ["cells","price","myFrom","myTo","wuFrom","wuTo","valueLow","valueHigh","priceAud","valueLowAud","valueHighAud"]) t[k]=num(k);
   t.acqDateApprox=fd.get("acqDateApprox")==="on"; t.priceApprox=fd.get("priceApprox")==="on"; t.myOpen=fd.get("myOpen")==="on";
   t.missingParts=(fd.get("missingParts")||"").split(",").map(s=>s.trim()).filter(Boolean);
@@ -639,8 +644,9 @@ async function liveConvert(kind){
   else { for(const k of ["valueLow","valueHigh"]){ t[k+"Aud"]=blank(t[k])?null:Math.round(t[k]*r.rate); $("#f_"+k+"Aud").value=t[k+"Aud"]??""; } }
   $("#"+kind+"RateNote").textContent=rateNote(t,kind);
 }
+function syncProdMonth(t){ if(t.prodMonth&&/^\d{4}-\d{2}$/.test(t.prodMonth)){ const y=+t.prodMonth.slice(0,4); t.myFrom=y; t.myTo=y; t.myOpen=false; if(!t.datingSource) t.datingSource="Mag Instrument"; } }
 async function saveTorch(){
-  const t=readForm(); const isNew=!S.sheet.id; if(isNew) t.id=uid("t");
+  const t=readForm(); const isNew=!S.sheet.id; if(isNew) t.id=uid("t"); syncProdMonth(t);
   if(pendingConv(t)) await convertTorch(t);
   if(S.sheet.removedFiles) for(const fid of S.sheet.removedFiles){ if(!S.torches.some(x=>x.id!==t.id&&[...(x.photos||[]),...(x.attachments||[])].some(p=>p.id===fid))) await dbDel("files",fid); }
   const cleared=applyAutoChecks(t);
@@ -680,6 +686,7 @@ function viewDateIt(){
 async function saveDating(withRange){
   const ds=S.dateState, t=S.torches.find(x=>x.id===ds.torchId); if(!t) return; const g=S.guides.find(x=>x.id===ds.g);
   const r=runDating(g,ds.marks,ds.serial,ds.cells?+ds.cells:null); const n=clone(t); n.markings={...ds.marks};
+  if(withRange&&n.prodMonth){ withRange=false; toast("Markings saved — the exact production date is kept"); }
   if(withRange){ n.myFrom=r.from; n.myTo=r.open?null:r.to; n.myOpen=r.open; n.datingSource=r.serialUsed&&r.used?"Chart + serial range":r.serialUsed?"Serial range":"Dating chart"; }
   const cl=applyAutoChecks(n); n.updatedAt=new Date().toISOString(); await dbPut("torches",n); await reload(); toast((withRange?"Date and markings saved":"Markings saved")+(cl?` — ${cl} check${cl===1?"":"s"} cleared`:"")); render();
 }
@@ -878,7 +885,7 @@ async function doRestore(){
 }
 
 /* ---------- CSV ---------- */
-const CSV_COLS=[["class",t=>(clsOf(t)||{}).name||""],["model"],["colour"],["serial"],["partNo"],["nickname"],["status"],["acqDate"],["acqType"],["source"],["location"],["priceOriginal",t=>t.price],["priceCurrency",t=>curOf(t.priceCur)],["priceAUD",t=>priceAUD(t)],["priceApprox"],["boughtWith"],["orderNo"],["myFrom"],["myTo"],["myOpen"],["datingSource"],["wuFrom"],["wuTo"],["light"],["bulb"],["switchType"],["battery"],["mods"],["working"],["grade"],["originality"],["missingParts",t=>(t.missingParts||[]).join("; ")],["packaging"],["conditionNotes"],["valueCurrency",t=>curOf(t.valueCur)],["valueLowOriginal",t=>t.valueLow],["valueHighOriginal",t=>t.valueHigh],["valueLowAUD",t=>valAUD(t,"valueLow")],["valueHighAUD",t=>valAUD(t,"valueHigh")],["valueDate"],["valueSource"],["markings",t=>{ const g=guideOf(t); return Object.entries(t.markings||{}).map(([k,v])=>{ const f=g&&g.features.find(x=>x.id===k); const o=f&&f.opts.find(x=>x.id===v); return (f?f.label:k)+": "+(o?o.label:v); }).join("; "); }],["openChecks",t=>(t.checks||[]).filter(c=>!c.done).map(c=>c.t).join(" | ")],["notes"],["photos",t=>(t.photos||[]).length]];
+const CSV_COLS=[["class",t=>(clsOf(t)||{}).name||""],["model"],["colour"],["serial"],["partNo"],["nickname"],["status"],["acqDate"],["acqType"],["source"],["location"],["priceOriginal",t=>t.price],["priceCurrency",t=>curOf(t.priceCur)],["priceAUD",t=>priceAUD(t)],["priceApprox"],["boughtWith"],["orderNo"],["myFrom"],["myTo"],["myOpen"],["prodMonth"],["datingSource"],["wuFrom"],["wuTo"],["light"],["bulb"],["switchType"],["battery"],["mods"],["working"],["grade"],["originality"],["missingParts",t=>(t.missingParts||[]).join("; ")],["packaging"],["conditionNotes"],["valueCurrency",t=>curOf(t.valueCur)],["valueLowOriginal",t=>t.valueLow],["valueHighOriginal",t=>t.valueHigh],["valueLowAUD",t=>valAUD(t,"valueLow")],["valueHighAUD",t=>valAUD(t,"valueHigh")],["valueDate"],["valueSource"],["markings",t=>{ const g=guideOf(t); return Object.entries(t.markings||{}).map(([k,v])=>{ const f=g&&g.features.find(x=>x.id===k); const o=f&&f.opts.find(x=>x.id===v); return (f?f.label:k)+": "+(o?o.label:v); }).join("; "); }],["openChecks",t=>(t.checks||[]).filter(c=>!c.done).map(c=>c.t).join(" | ")],["notes"],["photos",t=>(t.photos||[]).length]];
 function toCSV(){ const q=v=>{ v=v==null?"":String(v); return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }; return "﻿"+[CSV_COLS.map(c=>c[0]).join(","),...S.torches.map(t=>CSV_COLS.map(([k,fn])=>q(fn?fn(t):t[k])).join(","))].join("\r\n"); }
 function viewExport(){ const url=URL.createObjectURL(new Blob([toCSV()],{type:"text/csv"})); return `<section class="view">${backMore}<div class="panel"><h3>Export CSV</h3><p style="margin:0">${S.torches.length} torches, ${CSV_COLS.length} columns. Opens in Excel. This is a spreadsheet copy, not a backup — photos aren't included and it can't be restored.</p><div class="row"><a class="btn primary" href="${url}" download="maglite-collection-${new Date().toISOString().slice(0,10)}.csv">Save CSV</a><button type="button" class="btn" data-copycsv>Copy CSV text</button></div><textarea class="csv" id="csvText" readonly aria-label="CSV text">${esc(toCSV().slice(1))}</textarea></div></section>`; }
 
@@ -937,11 +944,11 @@ function buildReport(o){
   const list=reportTorches(o);
   if(o.type==="summary"){
     const paid=list.reduce((s,t)=>s+(priceAUD(t)||0),0), lo=list.reduce((s,t)=>s+(valAUD(t,"valueLow")||0),0), hi=list.reduce((s,t)=>s+(valAUD(t,"valueHigh")||0),0);
-    return css+rHeader("Summary list",o,list.length)+`<table class="rt"><thead><tr><th>Torch</th><th>Serial</th><th>Class</th><th>Made</th><th>Acquired</th><th class="n">Paid (AUD)</th><th class="n">Value (AUD)</th><th>Status</th></tr></thead><tbody>${list.map(t=>`<tr><td><b>${esc(label(t))}</b>${t.nickname?`<div class="sm">${esc(t.nickname)}</div>`:""}</td><td class="mono">${esc(t.serial||"—")}</td><td>${esc((clsOf(t)||{}).name||"")}</td><td class="mono">${esc(fmtRange(t.myFrom,t.myTo,t.myOpen))}</td><td>${t.acqDate?esc(fmtDate(t.acqDate)):"—"}</td><td class="n">${t.price===0?"Free":rAud(priceAUD(t))}</td><td class="n">${esc(rValueAUD(t))}</td><td>${esc(t.status||"In collection")}</td></tr>`).join("")}</tbody><tfoot><tr><td colspan="5">Totals</td><td class="n">${rAud(paid)}</td><td class="n">${hi?`${rAud(lo)} – ${rAud(hi)}`:"—"}</td><td></td></tr></tfoot></table>`+ver;
+    return css+rHeader("Summary list",o,list.length)+`<table class="rt"><thead><tr><th>Torch</th><th>Serial</th><th>Class</th><th>Made</th><th>Acquired</th><th class="n">Paid (AUD)</th><th class="n">Value (AUD)</th><th>Status</th></tr></thead><tbody>${list.map(t=>`<tr><td><b>${esc(label(t))}</b>${t.nickname?`<div class="sm">${esc(t.nickname)}</div>`:""}</td><td class="mono">${esc(t.serial||"—")}</td><td>${esc((clsOf(t)||{}).name||"")}</td><td class="mono">${esc(madeShort(t))}</td><td>${t.acqDate?esc(fmtDate(t.acqDate)):"—"}</td><td class="n">${t.price===0?"Free":rAud(priceAUD(t))}</td><td class="n">${esc(rValueAUD(t))}</td><td>${esc(t.status||"In collection")}</td></tr>`).join("")}</tbody><tfoot><tr><td colspan="5">Totals</td><td class="n">${rAud(paid)}</td><td class="n">${hi?`${rAud(lo)} – ${rAud(hi)}`:"—"}</td><td></td></tr></tfoot></table>`+ver;
   }
   if(o.type==="insurance"){
     const lo=list.reduce((s,t)=>s+(valAUD(t,"valueLow")||0),0), hi=list.reduce((s,t)=>s+(valAUD(t,"valueHigh")||0),0), paid=list.reduce((s,t)=>s+(priceAUD(t)||0),0), unval=list.filter(t=>valAUD(t,"valueHigh")==null&&valAUD(t,"valueLow")==null).length;
-    return css+rHeader("Insurance / valuation schedule",o,list.length)+`<table class="rt"><thead><tr>${o.photos?"<th>Photo</th>":""}<th>Item</th><th>Serial</th><th>Condition</th><th class="n">Paid (AUD)</th><th class="n">Estimated value (AUD)</th></tr></thead><tbody>${list.map(t=>`<tr>${o.photos?`<td>${rThumb((t.photos||[])[0],"th22")}</td>`:""}<td><b>${esc(label(t))}</b><div class="sm">${esc([(clsOf(t)||{}).name,t.partNo&&("Part "+t.partNo),t.myFrom!=null&&("Made "+fmtRange(t.myFrom,t.myTo,t.myOpen))].filter(Boolean).join(" · "))}</div>${t.packaging?`<div class="sm">${esc(t.packaging)}</div>`:""}</td><td class="mono">${esc(t.serial||"—")}</td><td>${esc(t.grade||"—")}${t.originality&&t.originality!=="All original"?`<div class="sm">${esc(t.originality)}</div>`:""}</td><td class="n">${t.price===0?"Free":rAud(priceAUD(t))}${t.acqDate?`<div class="sm">${esc(fmtDate(t.acqDate))}</div>`:""}</td><td class="n">${esc(rValueAUD(t))}${t.valueDate||t.valueSource?`<div class="sm">${esc([t.valueDate&&fmtDate(t.valueDate),t.valueSource].filter(Boolean).join(" · "))}</div>`:""}</td></tr>`).join("")}</tbody>
+    return css+rHeader("Insurance / valuation schedule",o,list.length)+`<table class="rt"><thead><tr>${o.photos?"<th>Photo</th>":""}<th>Item</th><th>Serial</th><th>Condition</th><th class="n">Paid (AUD)</th><th class="n">Estimated value (AUD)</th></tr></thead><tbody>${list.map(t=>`<tr>${o.photos?`<td>${rThumb((t.photos||[])[0],"th22")}</td>`:""}<td><b>${esc(label(t))}</b><div class="sm">${esc([(clsOf(t)||{}).name,t.partNo&&("Part "+t.partNo),(t.prodMonth||t.myFrom!=null)&&("Made "+madeShort(t))].filter(Boolean).join(" · "))}</div>${t.packaging?`<div class="sm">${esc(t.packaging)}</div>`:""}</td><td class="mono">${esc(t.serial||"—")}</td><td>${esc(t.grade||"—")}${t.originality&&t.originality!=="All original"?`<div class="sm">${esc(t.originality)}</div>`:""}</td><td class="n">${t.price===0?"Free":rAud(priceAUD(t))}${t.acqDate?`<div class="sm">${esc(fmtDate(t.acqDate))}</div>`:""}</td><td class="n">${esc(rValueAUD(t))}${t.valueDate||t.valueSource?`<div class="sm">${esc([t.valueDate&&fmtDate(t.valueDate),t.valueSource].filter(Boolean).join(" · "))}</div>`:""}</td></tr>`).join("")}</tbody>
       <tfoot><tr>${o.photos?"<td></td>":""}<td colspan="3">Total (${list.length} items${unval?`, ${unval} not valued`:""})</td><td class="n">${rAud(paid)}</td><td class="n">${hi?`${rAud(lo)} – ${rAud(hi)}`:"—"}</td></tr></tfoot></table>
       <div class="rnote">Estimated values are the owner's estimates in Australian dollars, based on the sources and dates shown for each item. Photographs and serial numbers recorded by the owner.</div>`+ver;
   }
@@ -957,7 +964,7 @@ function buildReport(o){
     ${o.photos&&ph.length?`<div class="cat-ph"><div class="cat-main"><img data-fid="${esc(ph[0].id)}" alt=""></div>${ph.length>1?`<div class="cat-more">${ph.slice(1,7).map(p=>`<img data-fid="${esc(p.id)}" alt="">`).join("")}</div>`:""}</div>`:""}
     <div class="cols">
       ${rBlk("Identity",rRows([["Class",c&&c.name],["Model",t.model],["Part / model no.",t.partNo],["Voltage",voltsOf(t)],["Colour",t.colour]]))}
-      ${rBlk("Production",rRows([["Made",fmtRange(t.myFrom,t.myTo,t.myOpen)],["Dating source",t.datingSource],["Notes",t.datingNotes]]))}
+      ${rBlk("Production",rRows([["Made",madeLong(t)+(t.prodMonth?" (exact)":"")],["Dating source",t.datingSource],["Notes",t.datingNotes]]))}
       ${rBlk("Markings",rMarkings(t))}
       ${rBlk("Acquisition",rRows([["Date",t.acqDate?fmtDate(t.acqDate)+(t.acqDateApprox?" (approx.)":""):""],["Type",t.acqType],["Source",t.source],["Location / seller",t.location],["Paid incl. postage",blank(t.price)?"":showPrice(t)+(t.priceApprox?" (approx.)":"")],["Bought with",t.boughtWith],["Order no.",t.orderNo]]))}
       ${rBlk("Technical",rRows([["Light source",t.light],["Bulb",t.bulb],["Switch",t.switchType],["Battery",t.battery],["Modifications",t.mods],["Working",t.working]]))}
@@ -1044,7 +1051,7 @@ async function migrateData(){
       const lu=(LABEL_UPDATES[g.id]||{})[f.id]; if(lu) for(const o of f.opts){ const u=lu[o.id]; if(u&&o.label===u[0]){ o.label=u[1]; ch=true; } } }
     if(ch){ await dbPut("guides",g); gchanged++; } }
   for(const t of S.torches){ let ch=false;
-    for(const c of (t.checks||[])){ if(c.field!==undefined) continue; let key=""; for(const [re,k] of CHECK_LINKS){ if(re.test(c.t)){ key=k; break; } }
+    for(const c of (t.checks||[])){ if(c.field===""&&!c.done&&/^ask mag instrument/i.test(c.t)&&!filled(t,"prodMonth")){ c.field="prodMonth"; ch=true; continue; } if(c.field!==undefined) continue; let key=""; for(const [re,k] of CHECK_LINKS){ if(re.test(c.t)){ key=k; break; } }
       c.field=(key&&!c.done&&!filled(t,key))?key:""; ch=true; }
     if(ch){ await dbPut("torches",t); tchanged++; } }
   if(gchanged||tchanged) await reload();
