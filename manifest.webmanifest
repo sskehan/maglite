@@ -1,7 +1,7 @@
 {
-  "name": "Maglite Collection",
-  "short_name": "Maglites",
-  "description": "Track, date and back up a Maglite torch collection. Works offline; data stays on the device.",
+  "name": "MyMaglites",
+  "short_name": "MyMaglites",
+  "description": "Track, date and back up your Maglite torch collection. Works offline; keeps a live copy in your Dropbox.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

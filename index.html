@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Maglite Collection</title>
+<title>MyMaglites</title>
 <meta name="theme-color" content="#16191d">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -41,7 +41,8 @@ h1,h2,h3{font-family:var(--f-display);font-weight:600;letter-spacing:.01em;text-
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--etch);color:#e8ebef;
   background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 1px,transparent 1px 6px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 1px,transparent 1px 6px)}
 .top .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
-.brand{font-family:var(--f-display);font-size:22px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;flex:1;min-width:0;line-height:1.1}
+.logo{width:40px;height:40px;border-radius:10px;flex:none;margin-right:10px;box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.brand{font-family:var(--f-display);font-size:24px;font-weight:700;letter-spacing:.03em;flex:1;min-width:0;line-height:1.1}
 .brand small{display:block;font:500 11px/1.4 var(--f-mono);letter-spacing:.12em;color:#9aa4b0;text-transform:uppercase}
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 12px;cursor:pointer;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;text-decoration:none;color:inherit}
 .btn.primary{background:var(--anod);border-color:var(--anod);color:var(--anod-ink)}
@@ -84,6 +85,9 @@ select.sel{border:1px solid var(--line);background:var(--surface);border-radius:
 .tag.flag{color:var(--warn);border-color:var(--warn);background:transparent}
 .tag.st{color:var(--anod);border-color:var(--anod);background:transparent}
 .empty{border:1px dashed var(--line);border-radius:var(--r);padding:24px;text-align:center;color:var(--ink-2);background:var(--surface);display:flex;flex-direction:column;gap:12px;align-items:center}
+#hdrsub.warnTxt{color:var(--warn)}
+.dbxst{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:14px}.dbxst dt{color:var(--muted,#888)}.dbxst dd{margin:0}
+code.sel{user-select:all;word-break:break-all}
 .banner{border:1px solid var(--warn);color:var(--ink);background:var(--beam-soft);border-radius:var(--r);padding:10px 12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
 .banner span{flex:1;min-width:180px}
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -193,7 +197,7 @@ textarea.csv{width:100%;min-height:160px;font:12px var(--f-mono);border:1px soli
 </head>
 <body>
 <header class="top"><div class="wrap">
-  <div class="brand">Maglite Collection<small id="hdrsub">Loading…</small></div>
+  <img class="logo" src="icon-192.png" alt="" width="40" height="40"><div class="brand">MyMaglites<small id="hdrsub">Loading…</small></div>
   <button class="btn" id="addBtn" type="button">+ Add torch</button>
 </div></header>
 
@@ -214,20 +218,25 @@ textarea.csv{width:100%;min-height:160px;font:12px var(--f-mono);border:1px soli
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const APP_ID="maglite-collection", BACKUP_VERSION=1, NOW=new Date().getFullYear();
+const APP_ID="maglite-collection", APP_VERSION="1.0", BACKUP_VERSION=1, NOW=new Date().getFullYear();
 
 /* ================= storage (IndexedDB, on this device) ================= */
-const STORES=["torches","wanted","classes","guides","files","meta"];
+const STORES=["torches","wanted","classes","guides","files","meta","outbox"];
 let _db;
-function openDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open("maglite-collection",1);
+function openDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open("maglite-collection",2);
   r.onupgradeneeded=()=>{ const d=r.result; for(const s of STORES) if(!d.objectStoreNames.contains(s)) d.createObjectStore(s,{keyPath:"id"}); };
   r.onsuccess=()=>{_db=r.result;res(_db)}; r.onerror=()=>rej(r.error); }); }
 function tx(store,mode,fn){ return new Promise((res,rej)=>{ const t=_db.transaction(store,mode); const os=t.objectStore(store); let out; const r=fn(os); if(r) r.onsuccess=()=>{out=r.result}; t.oncomplete=()=>res(out); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); }
 const dbAll=s=>tx(s,"readonly",os=>os.getAll());
 const dbGet=(s,id)=>tx(s,"readonly",os=>os.get(id));
-const dbPut=(s,o)=>tx(s,"readwrite",os=>os.put(o));
-const dbDel=(s,id)=>tx(s,"readwrite",os=>os.delete(id));
-const dbClear=s=>tx(s,"readwrite",os=>os.clear());
+let _bulk=0; // >0 while restoring or upgrading data, so those writes don't count as your changes
+const _user=s=>s!=="meta"&&s!=="outbox"&&!_bulk;
+const _w=(s,op,key)=>r=>{ if(_user(s)) noteChange(s,op,key); return r; };
+const _ro=s=>_user(s)&&S.readOnly?Promise.reject(new Error(RO_MSG)):null;
+const dbPut=(s,o)=>_ro(s)||tx(s,"readwrite",os=>os.put(o)).then(_w(s,"put",o.id));
+const dbDel=(s,id)=>_ro(s)||tx(s,"readwrite",os=>os.delete(id)).then(_w(s,"del",id));
+const dbClear=s=>_ro(s)||tx(s,"readwrite",os=>os.clear()).then(_w(s,"clear",null));
+const saveMeta=()=>tx("meta","readwrite",os=>os.put({id:"main",...S.meta}));
 const uid=p=>(p||"x")+"-"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 
 /* ================= built-in starting classes and guides (all editable) ================= */
@@ -461,16 +470,28 @@ const openChecks=t=>(t.checks||[]).filter(c=>!c.done).length+autoChecks(t).lengt
 function render(){
   document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===S.tab?"page":"false"));
   const n=S.torches.filter(t=>openChecks(t)).length; const bd=$("#checkBadge"); bd.hidden=!n; bd.textContent=n;
-  $("#hdrsub").textContent=`${S.torches.filter(isOwned).length} torches · on this phone`;
+  hdrStatus();
   const m=$("#main");
   m.innerHTML = S.tab==="collection"?viewCollection(): S.tab==="date"?viewDateIt(): S.tab==="check"?viewChecks(): S.tab==="wanted"?viewWanted(): viewMore();
   hydrateImages(m);
 }
 function backupBanner(){
+  if(S.readOnly) return `<div class="banner"><span><b>View only.</b> ${esc((S.meta.owner||{}).name||"Another device")} is now the main device for this collection, so changes here are switched off.</span><button type="button" class="btn sm" data-more-go="backup">Options</button></div>`;
   if(!S.torches.length) return "";
-  const last=S.meta.lastBackup; const days=last?Math.floor((Date.now()-new Date(last))/864e5):null;
-  if(last&&days<30) return "";
-  return `<div class="banner"><span>${last?`Last backup was ${days} days ago.`:"Your collection lives only on this phone. Make a backup file."}</span><button type="button" class="btn sm primary" data-more-go="backup">Back up now</button></div>`;
+  const ch=S.meta.changes||0, dx=S.meta.dbx||{}, last=S.meta.lastBackup, days=last?Math.floor((Date.now()-new Date(last))/864e5):null;
+  let msg="";
+  if(dbxOn()){
+    if(ch&&dx.lastError) msg=`Dropbox sync didn't work: ${esc(dx.lastError)}`;
+    else if(ch&&days!=null&&days>=2) msg=`${ch} change${ch===1?"":"s"} waiting to go to Dropbox since ${fmtWhen(last)}.`;
+    if(!msg) return "";
+    return `<div class="banner" data-syncbanner><span>${msg}</span><button type="button" class="btn sm primary" data-dbxsync>Sync now</button></div>`;
+  }
+  if(dx.lastError&&!dx.refresh) msg=esc(dx.lastError)+".";
+  else if(!last) msg="Your collection lives only on this phone. Connect Dropbox so it's kept safe automatically.";
+  else if(ch>=PROMPT_EVERY) msg=`${ch} changes since your last backup (${fmtWhen(last)}).`;
+  else if(ch&&days>=30) msg=`Last backup was ${days} days ago.`;
+  if(!msg) return "";
+  return `<div class="banner"><span>${msg}</span><button type="button" class="btn sm primary" data-more-go="backup">${appKey()?"Connect Dropbox":"Back up now"}</button></div>`;
 }
 function viewCollection(){
   const own=S.torches.filter(isOwned);
@@ -482,7 +503,7 @@ function viewCollection(){
   list.sort(sorters[S.sort]);
   const used=S.classes.filter(c=>S.torches.some(t=>t.classId===c.id));
   const chips=[["all","All",S.torches.length],...used.map(c=>[c.id,c.name,S.torches.filter(t=>t.classId===c.id).length])].map(([id,n,k])=>`<button type="button" class="chip" data-cls="${esc(id)}" aria-pressed="${S.cls===id}">${esc(n)} <span class="muted num">${k}</span></button>`).join("");
-  if(!S.torches.length) return `<section class="view"><div class="empty"><b style="font:600 22px var(--f-display)">No torches on this phone yet</b><span>Restore your backup file to load your collection, or add your first torch.</span><div class="row" style="justify-content:center"><button type="button" class="btn primary" data-restore>Restore from backup</button><button type="button" class="btn" data-add>Add a torch</button></div></div></section>`;
+  if(!S.torches.length) return `<section class="view"><div class="empty"><b style="font:600 22px var(--f-display)">No torches on this phone yet</b><span>${dbxOn()?"Connected to Dropbox, but there's no collection there yet.":"New phone, or cleared Chrome? Connect Dropbox and your collection downloads automatically. Or restore a backup file, or add your first torch."}</span><div class="row" style="justify-content:center">${dbxOn()?"":`<button type="button" class="btn primary" data-dbxconnect>Get my collection from Dropbox</button>`}<button type="button" class="btn ${dbxOn()?"primary":""}" data-restore>Restore backup file</button><button type="button" class="btn" data-add>Add a torch</button></div></div></section>`;
   return `<section class="view">${backupBanner()}
     <div class="summary"><div><span class="lbl">Torches</span><b>${own.length}</b></div><div><span class="lbl">Total paid (AUD)</span><b>${money(paid)}</b></div><div><span class="lbl">Est. value (AUD)</span><b>${vhi?money(vlo)+"–"+money(vhi).slice(1):"—"}</b></div></div>${pend?`<div class="muted small">${pend} foreign-currency amount${pend===1?" is":"s are"} waiting for an exchange rate and not yet in the totals. They fill in automatically next time the app is online.</div>`:""}
     <div class="toolbar"><input id="search" class="search" type="search" placeholder="Search model, serial, colour, seller…" value="${esc(S.q)}" aria-label="Search">
@@ -720,13 +741,13 @@ function viewMore(){
   const v=S.moreView;
   if(v==="stats") return viewStats(); if(v==="classes") return viewClasses(); if(v==="guides") return viewGuides(); if(v==="backup") return viewBackup(); if(v==="export") return viewExport(); if(v==="reports") return viewReports(); if(v==="about") return viewAbout();
   return `<section class="view"><div class="menu">
-    <button type="button" data-more="backup"><b>Backup & restore</b><span class="muted">One file with every torch and photo${S.meta.lastBackup?` · last ${fmtDate(S.meta.lastBackup.slice(0,10))}`:" · never backed up"}</span></button>
+    <button type="button" data-more="backup"><b>Backup & restore</b><span class="muted">${S.readOnly?"View only — replaced":dbxOn()?"Kept in Dropbox":"Connect Dropbox, or make a backup file"}${S.meta.lastBackup?` · last ${fmtWhen(S.meta.lastBackup)}`:" · never backed up"}${S.meta.changes?` · ${S.meta.changes} change${S.meta.changes===1?"":"s"} not backed up`:""}</span></button>
     <button type="button" data-more="classes"><b>Classes</b><span class="muted">Add or edit torch classes, cell types and voltages</span></button>
     <button type="button" data-more="guides"><b>Dating charts</b><span class="muted">View, edit or build charts for any class</span></button>
     <button type="button" data-more="stats"><b>Stats</b><span class="muted">By class, decade, colour; spend by year</span></button>
     <button type="button" data-more="reports"><b>Reports (PDF)</b><span class="muted">Catalogue, summary list, insurance schedule, wanted and to-check lists</span></button>
     <button type="button" data-more="export"><b>Export CSV</b><span class="muted">A spreadsheet of the collection for Excel</span></button>
-    <button type="button" data-more="about"><b>About this app</b><span class="muted">Where your data lives, storage used</span></button></div></section>`;
+    <button type="button" data-more="about"><b>About this app</b><span class="muted">Version ${APP_VERSION} · where your data lives, storage used</span></button></div><p class="muted small" style="text-align:center;margin:4px 0 0">MyMaglites · Version ${APP_VERSION}</p></section>`;
 }
 const backMore=`<div><button type="button" class="btn ghost" data-more="">← More</button></div>`;
 function barsOf(map,unit){ const e=Object.entries(map); const max=Math.max(1,...e.map(x=>x[1])); return `<div class="bars">${e.map(([k,v])=>`<div class="bar"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${(v/max*100).toFixed(1)}%"></div></div><span class="v">${unit==="$"?money(v):v}</span></div>`).join("")}</div>`; }
@@ -742,8 +763,8 @@ function viewStats(){
   <div class="panel"><h3>Spend by year acquired (AUD)</h3>${Object.keys(spend).length?barsOf(Object.fromEntries(Object.entries(spend).sort()),"$"):`<span class="muted">No prices recorded.</span>`}</div></section>`;
 }
 function viewAbout(){
-  return `<section class="view">${backMore}<div class="panel"><h3>Where your data lives</h3><p style="margin:0">Everything — torches, photos, receipts, classes and charts — is stored in this browser on this phone. Nothing is sent anywhere. The app works offline once installed.</p>
-  <p style="margin:0">Uninstalling the app or clearing Chrome's site data for it deletes the collection. Keep a recent backup file somewhere else (Google Drive, your NAS, email to yourself).</p>
+  return `<section class="view">${backMore}<div class="panel"><h3>Where your data lives</h3><p style="margin:0"><b>Version ${APP_VERSION}</b>.</p><p style="margin:0">Everything — torches, photos, receipts, classes and charts — is stored in this browser on this phone${dbxOn()?", and a live copy is kept in your own Dropbox":""}. Nothing else is sent anywhere. Exchange rates come from Frankfurter. The app works offline once installed.</p>
+  ${SITE_DATA_WARN}
   <dl class="kv" id="storeInfo"><dt>Storage used</dt><dd>Checking…</dd><dt>Protected storage</dt><dd>Checking…</dd></dl></div></section>`;
 }
 async function fillStoreInfo(){ const el=$("#storeInfo"); if(!el) return; let used="Unknown",prot="Unknown"; try{ const e=await navigator.storage.estimate(); used=(e.usage/1048576).toFixed(1)+" MB"; }catch{} try{ prot=(await navigator.storage.persisted())?"Yes — the browser won't clear it to save space":"Not yet — it's requested when you save"; }catch{} el.innerHTML=`<dt>Storage used</dt><dd>${used}</dd><dt>Protected storage</dt><dd>${prot}</dd>`; }
@@ -837,51 +858,327 @@ async function saveGuide(){
 }
 
 /* ---------- Backup & restore ---------- */
+const SITE_DATA_WARN=`<div class="banner"><span><b>Warning:</b> clearing Chrome's <b>“Cookies and site data”</b> (or “Clear storage” for this app, or uninstalling Chrome) <b>deletes the collection on this phone</b>. With Dropbox connected it comes back when you reconnect; without it, only a backup file can bring it back. When you clear Chrome's history, untick “Cookies and site data”.</span></div>`;
 function viewBackup(){
-  const last=S.meta.lastBackup;
-  return `<section class="view">${backMore}
-  <div class="panel"><h3>Back up</h3><p style="margin:0">Makes one .zip file with every torch, photo, receipt, class, chart and wanted item. Save it to Google Drive or your NAS, or email it to yourself.</p>
-    <div class="muted small">${last?`Last backup: ${fmtDate(last.slice(0,10))}`:"No backup made on this phone yet."}</div>
-    <div class="row"><button type="button" class="btn primary" data-backup>Make backup file</button><span class="muted small" id="bkStat"></span></div><div id="bkOut" class="row"></div></div>
-  <div class="panel"><h3>Restore</h3><p style="margin:0">Loads a backup file onto this phone. It <b>replaces</b> everything currently in the app. Use it on a new phone, or to undo mistakes.</p>
-    <div class="row"><button type="button" class="btn" data-restore>Choose backup file…</button><span class="muted small" id="rsStat"></span></div><div id="rsConfirm"></div></div></section>`;
+  return `<section class="view">${backMore}${SITE_DATA_WARN}
+  ${dbxPanel()}
+  <div class="panel"><h3>Backup file</h3><p style="margin:0">Makes one .zip file with every torch, photo, receipt, class, chart and wanted item, and saves it to the phone's Downloads. To send it to Google Drive, email or your NAS, open the Files app → Downloads and share it from there.</p>
+    <div class="row"><button type="button" class="btn ${dbxOn()?"":"primary"}" data-backup>Make backup file</button><span class="muted small" id="bkStat"></span></div><div id="bkOut" class="row"></div></div>
+  <div class="panel"><h3>Restore</h3><p style="margin:0">Loads a backup onto this ${devWord()}. It <b>replaces</b> everything currently in the app. ${dbxOn()?"A snapshot of what's here now is saved to Dropbox first, so a restore can be undone.":"Use it on a new phone, after clearing Chrome, or to undo mistakes."}</p>
+    <div class="row"><button type="button" class="btn" data-restore>Choose backup file…</button>${dbxOn()?`<button type="button" class="btn" data-dbxlist>Restore a Dropbox snapshot…</button>`:""}<span class="muted small" id="rsStat"></span></div><div id="dbxList"></div><div id="rsConfirm"></div></div></section>`;
 }
-let _backup=null;
-async function makeBackup(){
-  const st=$("#bkStat"); st.textContent="Packing…";
+function devWord(){ return /Android|iPhone/i.test(navigator.userAgent)?"phone":"device"; }
+function dbxPanel(){
+  const dx=S.meta.dbx||{}, ch=S.meta.changes||0, v=S.meta.verify;
+  if(!dbxOn()) return `<div class="panel" id="dbxPanel"><h3>Dropbox</h3>
+    <p style="margin:0">Connect Dropbox and the collection is kept there as well as on this ${devWord()}: each torch and photo is sent within seconds of saving, and a full snapshot is kept each day. If this ${devWord()} is cleared, lost or replaced, connect Dropbox on the new one and everything comes back.</p>
+    ${dx.lastError?`<p class="small" style="margin:0;color:var(--warn)">${esc(dx.lastError)}</p>`:""}
+    ${DBX_APP_KEY?"":`<div class="field"><label for="dbxKey">Dropbox App key</label><input id="dbxKey" autocomplete="off" autocapitalize="off" spellcheck="false" value="${esc(dx.appKey||"")}" placeholder="from the Dropbox App Console"></div>`}
+    <div class="row"><button type="button" class="btn primary" data-dbxconnect>Connect Dropbox</button></div>
+    ${DBX_APP_KEY?"":`<p class="muted small" style="margin:0">First time: create the app at dropbox.com/developers/apps (steps in the User Guide). Its Redirect URI must be exactly <code class="sel">${esc(dbxRedirect())}</code></p>`}</div>`;
+  const status=S.readOnly?`View only — replaced by ${esc((S.meta.owner||{}).name||"another device")}`:_syncing?"Syncing now…":ch?`${ch} change${ch===1?"":"s"} waiting to send`:"All changes in Dropbox ✓";
+  return `<div class="panel" id="dbxPanel"><h3>Dropbox</h3>
+    <dl class="dbxst"><dt>Account</dt><dd>${esc(dx.email||dx.name||"Connected")}</dd>
+    <dt>This ${devWord()}</dt><dd>${S.readOnly?"View only":"Main device"}</dd>
+    <dt>Status</dt><dd>${status}</dd>
+    <dt>Last sync</dt><dd>${S.meta.lastSync?fmtWhen(S.meta.lastSync):"Not yet"}</dd>
+    <dt>Last check</dt><dd>${v?`${fmtWhen(v.at)} · ${v.torches} torches, ${v.files} photos/files${v.mode==="first"?" · first upload complete ✓":v.mode==="restore"&&v.fixed?` · ${v.fixed} updated to match your restore ✓`:v.fixed?` · fixed ${v.fixed}`:" · all match ✓"}`:"Not yet"}</dd>
+    <dt>Last snapshot</dt><dd>${dx.lastSnap?`${fmtWhen(dx.lastSnap)} · ${(dx.lastSnapSize/1048576).toFixed(1)} MB`:"Not yet"}</dd>
+    ${dx.lastError?`<dt>Problem</dt><dd style="color:var(--warn)">${esc(dx.lastError)}${dx.lastErrorAt?` (${fmtWhen(dx.lastErrorAt)})`:""}</dd>`:""}</dl>
+    <label style="display:flex;gap:10px;align-items:center;margin:0"><input type="checkbox" id="dbxWifi" ${dx.wifiOnly!==false?"checked":""} style="width:20px;height:20px;flex:none;margin:0"><span>Daily snapshots on Wi-Fi only <span class="muted small">(torches and photos always send straight away)</span></span></label>
+    <div class="row">${S.readOnly?`<button type="button" class="btn primary" data-dbxtake>Make this the main ${devWord()}</button>`:`<button type="button" class="btn primary" data-dbxsync ${_syncing?"disabled":""}>Sync now</button><button type="button" class="btn" data-dbxcheck ${_syncing?"disabled":""}>Check Dropbox copy</button><button type="button" class="btn" data-dbxsnap ${_syncing?"disabled":""}>Snapshot now</button>`}<button type="button" class="btn ghost" data-dbxoff>Disconnect</button></div>
+    ${S.readOnly?`<p class="small" style="margin:0">Dropbox's collection was last changed from <b>${esc((S.meta.owner||{}).name||"another device")}</b>${(S.meta.owner||{}).at?` on ${fmtWhen(S.meta.owner.at)}`:""}. Making this the main ${devWord()} downloads that collection here first${S.torches.length?", after saving a snapshot of what's here":""}.</p>`:""}
+    <p class="muted small" style="margin:0">In Dropbox › Apps › <i>your app's name</i>: <b>live</b> is the current collection (one file per torch and photo), <b>snapshots</b> holds daily full backups (every day for ${SNAP_DAILY_DAYS} days, then one a month for ${SNAP_MONTHS} months), and <b>deleted</b> keeps anything you delete.</p></div>`;
+}
+function refreshDbxPanel(){ const el=$("#dbxPanel"); if(el) el.outerHTML=dbxPanel(); hdrStatus(); }
+function stamp(){ const d=new Date(),z=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}_${z(d.getHours())}${z(d.getMinutes())}${z(d.getSeconds())}`; }
+function backupName(kind){ return `maglite-${kind||"backup"}-${stamp()}.zip`; }
+function todayStr(){ const d=new Date(),z=n=>String(n).padStart(2,"0"); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
+function fmtWhen(iso){ if(!iso) return "—"; const d=new Date(iso); if(isNaN(d)) return "—"; const z=n=>String(n).padStart(2,"0"); const today=new Date().toDateString()===d.toDateString(); const t=d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}); return today?`today ${t}`:`${fmtDate(`${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`)} ${t}`; }
+function fileExt(f){ return (f.type==="image/jpeg"?"jpg":f.type==="image/png"?"png":f.type==="application/pdf"?"pdf":(String(f.name||"").split(".").pop()||"bin")).toLowerCase().replace(/[^a-z0-9]/g,"")||"bin"; }
+async function buildBackup(kind){
   const zip=new JSZip(); const files=await dbAll("files"); const manifest=[];
-  for(const f of files){ const ext=(f.type==="image/jpeg"?"jpg":f.type==="image/png"?"png":f.type==="application/pdf"?"pdf":(String(f.name||"").split(".").pop()||"bin")).toLowerCase(); const path=`files/${f.id}.${ext}`; zip.file(path,f.blob); manifest.push({id:f.id,type:f.type,name:f.name,path}); }
-  const data={app:APP_ID,version:BACKUP_VERSION,exportedAt:new Date().toISOString(),counts:{torches:S.torches.length,files:files.length},classes:S.classes,guides:S.guides,torches:S.torches,wanted:S.wanted,files:manifest};
+  for(const f of files){ const path=`files/${f.id}.${fileExt(f)}`; zip.file(path,f.blob); manifest.push({id:f.id,type:f.type,name:f.name,path}); }
+  const data={app:APP_ID,version:BACKUP_VERSION,appVersion:APP_VERSION,exportedAt:new Date().toISOString(),counts:{torches:S.torches.length,files:files.length},classes:S.classes,guides:S.guides,torches:S.torches,wanted:S.wanted,files:manifest};
   zip.file("backup.json",JSON.stringify(data,null,1));
   const blob=await zip.generateAsync({type:"blob",compression:"STORE"});
-  const name=`maglite-backup-${new Date().toISOString().slice(0,10)}.zip`;
-  _backup={blob,name}; const url=URL.createObjectURL(blob);
-  const file=new File([blob],name,{type:"application/zip"});
-  const canShare=navigator.canShare&&navigator.canShare({files:[file]});
-  $("#bkOut").innerHTML=`<a class="btn primary" href="${url}" download="${esc(name)}" data-dlbk>Save to phone</a>${canShare?`<button type="button" class="btn" data-sharebk>Share to Drive / email…</button>`:""}<span class="muted small">${(blob.size/1048576).toFixed(1)} MB · ${S.torches.length} torches · ${files.length} files</span>`;
+  return {blob,name:backupName(kind),nFiles:files.length};
+}
+async function makeBackup(){
+  const st=$("#bkStat"); st.textContent="Packing…";
+  const {blob,name,nFiles}=await buildBackup(); const url=URL.createObjectURL(blob);
+  $("#bkOut").innerHTML=`<a class="btn primary" href="${url}" download="${esc(name)}" data-dlbk>Save to phone</a><span class="muted small">${(blob.size/1048576).toFixed(1)} MB · ${S.torches.length} torches · ${nFiles} files</span>`;
   st.textContent="";
 }
-async function markBackedUp(){ S.meta.lastBackup=new Date().toISOString(); await dbPut("meta",{id:"main",...S.meta}); }
+
+/* ---------- Dropbox: live copy, upload queue, snapshots, main-device handover ----------
+   Dropbox app folder layout:
+     live/manifest.json   who the main device is, revision, counts
+     live/torches/<id>.json, live/files/<id>.<ext>, live/files.json (photo index), live/classes.json, live/guides.json, live/wanted.json
+     snapshots/*.zip      daily full backups (and one before every restore)
+     deleted/…            anything deleted or replaced on the phone, moved here instead of erased      */
+const DBX_APP_KEY="g3nr0v8dzp2vr0a"; // Dropbox App key for the MyMaglites app folder (not a secret; the App secret is never used)
+const PROMPT_EVERY=10, SYNC_DELAY=3000, VERIFY_DAYS=7, SNAP_DAILY_DAYS=30, SNAP_MONTHS=24;
+const DBX_TOKEN="https://api.dropboxapi.com/oauth2/token";
+const RO_MSG="This device has been replaced as the main one — view only. Use More › Backup & restore to make it the main device again.";
+let _syncT=null, _syncing=false, _syncAgain=false;
+const LIST_STORES=["classes","guides","wanted"];
+function noteChange(s,op,key){
+  S.meta.changes=(S.meta.changes||0)+1; S.meta.snapDirty=true;
+  const k=s==="torches"?"t:"+key:s==="files"?"f:"+key:LIST_STORES.includes(s)?"l:"+s:null;
+  if(op==="clear") S.meta.needFull=true;
+  else if(k) tx("outbox","readwrite",os=>os.put({id:k,op:k[0]==="l"?"put":op,at:Date.now()+Math.random()})).catch(()=>{});
+  saveMeta().catch(()=>{});
+  if(dbxOn()) scheduleSync(); hdrStatus();
+  if(!dbxOn()&&S.meta.changes%PROMPT_EVERY===0) setTimeout(()=>toast(`${S.meta.changes} changes not backed up — More › Backup & restore`),3000);
+}
+function hdrStatus(){ const el=$("#hdrsub"); if(!el) return; const ch=S.meta.changes||0;
+  const st=S.readOnly?"view only":_syncing?"syncing…":ch?(dbxOn()?`${ch} change${ch===1?"":"s"} waiting`:`${ch} change${ch===1?"":"s"} not backed up`):dbxOn()?"in Dropbox ✓":S.meta.lastBackup?"backed up ✓":"not backed up";
+  el.textContent=`${S.torches.filter(isOwned).length} torches · ${st}`; el.classList.toggle("warnTxt",S.readOnly||(!_syncing&&(ch>0||(!dbxOn()&&!S.meta.lastBackup))&&S.torches.length>0)); }
+function dbxOn(){ return !!(S.meta.dbx&&S.meta.dbx.refresh); }
+function appKey(){ return DBX_APP_KEY||(S.meta.dbx||{}).appKey||""; }
+function onCellular(){ const c=navigator.connection; return !!(c&&c.type==="cellular"); }
+function dbxRedirect(){ return new URL("./",location.href).href.split(/[?#]/)[0]; }
+function setDbx(patch){ S.meta.dbx={...(S.meta.dbx||{}),...patch}; return saveMeta(); }
+function deviceId(){ if(!S.meta.deviceId){ S.meta.deviceId=uid("dev"); saveMeta().catch(()=>{}); } return S.meta.deviceId; }
+function deviceName(){ const u=navigator.userAgent; return (/Android/.test(u)?"Android phone":/iPhone|iPad/.test(u)?"iPhone/iPad":/Windows/.test(u)?"Windows PC":/Mac/.test(u)?"Mac":/Linux/.test(u)?"Linux PC":"Device")+` (set up ${fmtDate(S.meta.deviceSince||todayStr())})`; }
+function scheduleSync(ms){ clearTimeout(_syncT); _syncT=setTimeout(()=>syncNow(),ms??SYNC_DELAY); }
+const b64url=u8=>btoa(String.fromCharCode(...u8)).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const hex=buf=>[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+async function dbxHash(data){ // Dropbox content_hash: SHA-256 of the concatenated SHA-256s of each 4 MB block
+  const buf=data instanceof Blob?await data.arrayBuffer():new TextEncoder().encode(data).buffer; const parts=[];
+  for(let i=0;i<buf.byteLength||i===0;i+=4194304){ parts.push(new Uint8Array(await crypto.subtle.digest("SHA-256",buf.slice(i,i+4194304)))); if(!buf.byteLength) break; }
+  const all=new Uint8Array(parts.length*32); parts.forEach((p,i)=>all.set(p,i*32)); return hex(await crypto.subtle.digest("SHA-256",all));
+}
+
+/* sign-in (OAuth with PKCE; no password or secret is ever stored) */
+async function dbxConnect(){
+  const key=DBX_APP_KEY||(($("#dbxKey")||{}).value||"").trim(); if(!/^[a-z0-9]{8,}$/i.test(key)){ S.tab="more"; S.moreView="backup"; render(); toast("Paste the App key from the Dropbox App Console first"); return; }
+  if(!(window.crypto&&crypto.subtle)){ toast("This browser can't do the secure sign-in — open the app from its https address"); return; }
+  const v=b64url(crypto.getRandomValues(new Uint8Array(48)));
+  const challenge=b64url(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(v))));
+  const state=b64url(crypto.getRandomValues(new Uint8Array(16)));
+  await setDbx({appKey:key,pkce:{v,state},lastError:null});
+  const q=new URLSearchParams({client_id:key,response_type:"code",code_challenge:challenge,code_challenge_method:"S256",token_access_type:"offline",redirect_uri:dbxRedirect(),state});
+  location.href="https://www.dropbox.com/oauth2/authorize?"+q.toString();
+}
+async function dbxFinish(){
+  const p=new URLSearchParams(location.search); if(!p.has("code")&&!p.has("error")) return;
+  history.replaceState(null,"",location.pathname);
+  const dx=S.meta.dbx||{}; S.tab="more"; S.moreView="backup";
+  if(p.has("error")){ render(); toast("Dropbox not connected: "+(p.get("error_description")||p.get("error")).replace(/\+/g," ")); return; }
+  if(!dx.pkce||p.get("state")!==dx.pkce.state){ render(); toast("That Dropbox sign-in didn't match — tap Connect Dropbox again"); return; }
+  try{
+    const r=await fetch(DBX_TOKEN,{method:"POST",body:new URLSearchParams({grant_type:"authorization_code",code:p.get("code"),client_id:dx.appKey,code_verifier:dx.pkce.v,redirect_uri:dbxRedirect()})});
+    const j=await r.json().catch(()=>({})); if(!r.ok||!j.refresh_token) throw new Error(j.error_description||j.error||("HTTP "+r.status));
+    S.meta.dbx={appKey:dx.appKey,refresh:j.refresh_token,access:j.access_token,expires:Date.now()+(j.expires_in||14400)*1000,wifiOnly:dx.wifiOnly!==false};
+    await saveMeta();
+    try{ const a=await dbxApi("users/get_current_account",null); await setDbx({email:a.email,name:a.name&&a.name.display_name}); }catch{}
+  }catch(e){ await setDbx({pkce:null,lastError:"Dropbox sign-in failed: "+(e.message||e)}); render(); return; }
+  await afterConnect();
+}
+async function afterConnect(){
+  render();
+  let man; try{ man=await dbxReadJSON("/live/manifest.json"); }catch(e){ toast("Connected, but Dropbox couldn't be read: "+e.message); return; }
+  if(!man){ // nothing live in Dropbox yet
+    if(S.torches.length){ toast("Dropbox connected — sending your collection"); S.meta.needFull=true; S.meta.snapDirty=true; await saveMeta(); await syncNow({takeOver:true}); }
+    else { toast("Dropbox connected — no collection there yet. Restore a backup or add a torch."); dbxListBackups(); }
+    return;
+  }
+  if(man.owner===deviceId()){ await syncNow(); return; }
+  if(!S.torches.length){ await dbxTakeOver(true); return; } // empty phone: new phone or cleared Chrome
+  await enterReadOnly(man); S.tab="more"; S.moreView="backup"; render();
+  toast(`Dropbox has a collection from ${man.ownerName||"another device"} — choose what to do`);
+}
+
+/* low-level calls */
+async function dbxToken(force){
+  const dx=S.meta.dbx; if(!force&&dx.access&&dx.expires>Date.now()+60000) return dx.access;
+  const r=await fetch(DBX_TOKEN,{method:"POST",body:new URLSearchParams({grant_type:"refresh_token",refresh_token:dx.refresh,client_id:dx.appKey})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok){ if(j.error==="invalid_grant"){ await setDbx({refresh:null,access:null,lastError:"Dropbox access was removed or expired — connect Dropbox again"}); } throw new Error(j.error_description||j.error||("HTTP "+r.status)); }
+  await setDbx({access:j.access_token,expires:Date.now()+(j.expires_in||14400)*1000}); return j.access_token;
+}
+class DbxErr extends Error{ constructor(m,status,summary){ super(m); this.status=status; this.summary=summary||""; } }
+async function dbxCall(url,opts){ // retries: fresh token on 401, waits on 429/5xx
+  for(let i=0;i<4;i++){ const tok=await dbxToken(i>0&&opts._401); const r=await fetch(url,{method:"POST",...opts,headers:{...opts.headers,Authorization:"Bearer "+tok}});
+    if(r.status===401&&!opts._401){ opts._401=true; continue; }
+    if((r.status===429||r.status>=500)&&i<3){ const wait=Math.min(30,Number(r.headers.get("Retry-After"))||2**i); await new Promise(z=>setTimeout(z,wait*1000)); continue; }
+    if(!r.ok){ const t=await r.text().catch(()=>""); let m=t; try{ m=JSON.parse(t).error_summary||t; }catch{} throw new DbxErr(`Dropbox ${r.status}: ${String(m).slice(0,120)}`,r.status,String(m)); }
+    return r; }
+}
+async function dbxApi(ep,arg){ const r=await dbxCall("https://api.dropboxapi.com/2/"+ep,arg===undefined?{}:{headers:{"Content-Type":"application/json"},body:JSON.stringify(arg)}); const t=await r.text(); return t?JSON.parse(t):null; }
+const dbxArg=o=>JSON.stringify(o).replace(/[\u007f-￿]/g,c=>"\\u"+c.charCodeAt(0).toString(16).padStart(4,"0"));
+async function dbxUpload(path,body,mode){ if(body instanceof Blob&&body.size>145*1048576) throw new Error("a file over 145 MB is too big to send"); const r=await dbxCall("https://content.dropboxapi.com/2/files/upload",{headers:{"Content-Type":"application/octet-stream","Dropbox-API-Arg":dbxArg({path,mode:mode||"overwrite",autorename:mode==="add",mute:true})},body}); return r.json(); }
+async function dbxDownload(path){ const r=await dbxCall("https://content.dropboxapi.com/2/files/download",{headers:{"Dropbox-API-Arg":dbxArg({path})}}); return r.blob(); }
+const notFound=e=>e instanceof DbxErr&&e.status===409&&/not_found/.test(e.summary);
+async function dbxReadJSON(path){ try{ return JSON.parse(await (await dbxDownload(path)).text()); }catch(e){ if(notFound(e)) return null; throw e; } }
+async function dbxList(path,recursive){
+  let r; try{ r=await dbxApi("files/list_folder",{path,recursive:!!recursive}); }catch(e){ if(notFound(e)) return []; throw e; }
+  let es=r.entries; while(r.has_more){ r=await dbxApi("files/list_folder/continue",{cursor:r.cursor}); es=es.concat(r.entries); }
+  return es.filter(e=>e[".tag"]==="file");
+}
+async function dbxMoveToDeleted(path){ const name=path.split("/").pop(); const sub=path.split("/").slice(2,-1).join("/");
+  try{ await dbxApi("files/move_v2",{from_path:path,to_path:`/deleted/${sub?sub+"/":""}${stamp()}_${name}`,autorename:true}); return true; }catch(e){ if(notFound(e)) return false; throw e; } }
+async function pool(items,n,fn){ let i=0; await Promise.all(Array.from({length:Math.min(n,items.length)},async()=>{ while(i<items.length){ const k=i++; await fn(items[k],k); } })); }
+
+/* what the live folder should hold */
+const torchPath=t=>`/live/torches/${t.id}.json`, filePath=f=>`/live/files/${f.id}.${fileExt(f)}`;
+async function fileIndex(){ return JSON.stringify((await dbAll("files")).map(f=>({id:f.id,type:f.type,name:f.name,path:filePath(f).slice(6)}))); }
+async function listBody(s){ return JSON.stringify(await dbAll(s)); }
+
+/* the sync cycle: check who is main → send the queue (or a full check) → update the manifest → snapshot if due */
+async function syncNow(opts={}){
+  if(!dbxOn()) return; if(_syncing){ _syncAgain=true; return; } if(S.readOnly&&!opts.takeOver) return;
+  if(!navigator.onLine){ hdrStatus(); return; }
+  clearTimeout(_syncT); _syncing=true; refreshDbxPanel(); let ok=false;
+  try{
+    const man=await dbxReadJSON("/live/manifest.json");
+    if(man&&man.owner&&man.owner!==deviceId()&&!opts.takeOver){ await enterReadOnly(man); return; }
+    const due=!S.meta.verify||Date.now()-new Date(S.meta.verify.at)>VERIFY_DAYS*864e5;
+    let sent;
+    if(!man||S.meta.needFull||opts.check||due) sent=await dbxReconcile(!man?"first":S.meta.needFull?"restore":"check");
+    else sent=await drainOutbox();
+    if(sent||!man||man.owner!==deviceId()) await writeManifest(man);
+    S.meta.changes=await outboxCount(); if(!S.meta.changes&&!S.meta.needFull) S.meta.lastBackup=new Date().toISOString();
+    S.meta.lastSync=new Date().toISOString(); await setDbx({lastError:null,lastErrorAt:null}); ok=true;
+  }catch(e){
+    const msg=!navigator.onLine||e instanceof TypeError?"couldn't reach Dropbox (no connection?)":String(e&&e.message||e);
+    await setDbx({lastError:msg,lastErrorAt:new Date().toISOString()}).catch(()=>{});
+    if(opts.manual) toast("Dropbox sync failed: "+msg);
+    if(dbxOn()) scheduleSync(60000);
+  }finally{ _syncing=false; refreshDbxPanel(); const bn=document.querySelector("section.view > .banner[data-syncbanner]"); if(ok&&bn) bn.remove(); }
+  if(ok){ if(opts.manual) toast("Dropbox is up to date"); maybeSnapshot(opts.snap).catch(()=>{}); }
+  if(_syncAgain||(ok&&S.meta.changes)){ _syncAgain=false; scheduleSync(500); }
+}
+async function outboxCount(){ return (await dbAll("outbox")).length; }
+function outboxDone(it){ return new Promise((res,rej)=>{ const t=_db.transaction("outbox","readwrite"); const os=t.objectStore("outbox"); const g=os.get(it.id); g.onsuccess=()=>{ if(g.result&&g.result.at===it.at) os.delete(it.id); }; t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); }); }
+async function drainOutbox(){
+  const items=(await dbAll("outbox")).sort((a,b)=>a.at-b.at); if(!items.length) return 0;
+  let filesChanged=false, remoteFiles=null;
+  for(const it of items){
+    const [kind,id]=[it.id.slice(0,1),it.id.slice(2)];
+    if(kind==="t"){ const t=await dbGet("torches",id); if(t&&it.op!=="del") await dbxUpload(torchPath(t),JSON.stringify(t)); else await dbxMoveToDeleted(`/live/torches/${id}.json`); }
+    else if(kind==="f"){ filesChanged=true; const f=await dbGet("files",id);
+      if(f&&it.op!=="del") await dbxUpload(filePath(f),f.blob);
+      else { remoteFiles=remoteFiles||await dbxList("/live/files"); for(const e of remoteFiles.filter(e=>e.name.toLowerCase().startsWith(id.toLowerCase()+"."))) await dbxMoveToDeleted(e.path_lower); } }
+    else if(kind==="l") await dbxUpload(`/live/${id}.json`,await listBody(id));
+    await outboxDone(it);
+  }
+  if(filesChanged) await dbxUpload("/live/files.json",await fileIndex());
+  return items.length;
+}
+/* full check: compare every item's fingerprint with Dropbox, send what differs, move extras to deleted */
+async function dbxReconcile(mode){
+  const remote=new Map((await dbxList("/live",true)).map(e=>[e.path_lower,e]));
+  const want=[]; const torches=await dbAll("torches"), files=await dbAll("files");
+  for(const t of torches) want.push([torchPath(t),JSON.stringify(t)]);
+  for(const f of files) want.push([filePath(f),f.blob]);
+  for(const s of LIST_STORES) want.push([`/live/${s}.json`,await listBody(s)]);
+  want.push(["/live/files.json",await fileIndex()]);
+  const keep=new Set(want.map(w=>w[0].toLowerCase())); keep.add("/live/manifest.json");
+  let fixed=0; const pending=await dbAll("outbox");
+  await pool(want,4,async([path,body])=>{ const r=remote.get(path.toLowerCase()); if(!r||r.content_hash!==await dbxHash(body)){ await dbxUpload(path,body); fixed++; } });
+  for(const [p,e] of remote) if(!keep.has(p)&&/^\/live\/(torches|files)\//.test(p)){ await dbxMoveToDeleted(e.path_lower); fixed++; }
+  for(const it of pending) await outboxDone(it);
+  S.meta.needFull=false; S.meta.verify={at:new Date().toISOString(),torches:torches.length,files:files.length,fixed,mode:mode||"check"}; await saveMeta();
+  return fixed;
+}
+async function writeManifest(prev){
+  const man={app:APP_ID,schema:1,appVersion:APP_VERSION,owner:deviceId(),ownerName:deviceName(),rev:((prev&&prev.rev)||0)+1,updatedAt:new Date().toISOString(),
+    counts:{torches:S.torches.length,files:(await dbAll("files")).length,classes:S.classes.length,guides:S.guides.length,wanted:S.wanted.length}};
+  await dbxUpload("/live/manifest.json",JSON.stringify(man,null,1)); S.meta.owner={id:man.owner,name:man.ownerName,at:man.updatedAt}; await saveMeta();
+}
+
+/* main device / view only */
+async function enterReadOnly(man){ S.readOnly=true; S.meta.readOnly=true; S.meta.owner={id:man.owner,name:man.ownerName,at:man.updatedAt}; await saveMeta(); clearTimeout(_syncT); render(); }
+async function dbxTakeOver(silentIfEmpty){
+  const st=$("#rsStat"); const say=m=>{ if($("#rsStat")) $("#rsStat").textContent=m; else toast(m); };
+  const man=await dbxReadJSON("/live/manifest.json");
+  if(!man){ S.readOnly=false; S.meta.readOnly=false; await saveMeta(); await syncNow({takeOver:true}); render(); return; }
+  if(S.torches.length){ say("Saving a snapshot of this device first…"); await uploadSnapshot("before-restore"); }
+  say("Downloading your collection from Dropbox…");
+  await dbxPull(m=>say(m));
+  await syncNow({takeOver:true});
+  S.tab="collection"; render(); toast(`${S.torches.length} torches downloaded from Dropbox — this is now the main ${devWord()}`);
+  if(st) st.textContent="";
+}
+async function dbxPull(progress){
+  const index=await dbxReadJSON("/live/files.json")||[]; const lists={}; for(const s of LIST_STORES) lists[s]=await dbxReadJSON(`/live/${s}.json`)||[];
+  const tfiles=(await dbxList("/live/torches")).filter(e=>/\.json$/.test(e.name));
+  const torches=[], blobs=[]; let n=0; const total=tfiles.length+index.length;
+  await pool(tfiles,4,async e=>{ torches.push(JSON.parse(await (await dbxDownload(e.path_lower)).text())); if(++n%5===0) progress&&progress(`Downloading ${n} of ${total}…`); });
+  await pool(index,4,async f=>{ const b=await dbxDownload("/live/"+f.path); blobs.push({id:f.id,type:f.type,name:f.name,blob:new Blob([b],{type:f.type})}); if(++n%5===0) progress&&progress(`Downloading ${n} of ${total}…`); });
+  // everything downloaded: now replace what's on this device
+  _bulk++; try{
+    for(const s of ["torches","wanted","classes","guides","files","outbox"]) await dbClear(s);
+    for(const u of Object.values(S.urls)) URL.revokeObjectURL(u); S.urls={};
+    for(const f of blobs) await dbPut("files",f); for(const t of torches) await dbPut("torches",t);
+    for(const s of LIST_STORES) for(const x of lists[s]) await dbPut(s,x);
+    S.readOnly=false; S.meta.readOnly=false; S.meta.changes=0; S.meta.needFull=false; S.meta.snapDirty=false; S.meta.lastBackup=new Date().toISOString(); await saveMeta();
+    await reload(); if(!S.classes.length&&!S.guides.length){ for(const g of defaultGuides()) await dbPut("guides",g); for(const c of defaultClasses()) await dbPut("classes",c); await reload(); }
+    await migrateData();
+  }finally{ _bulk--; }
+  askPersist();
+  S.meta.verify={at:new Date().toISOString(),torches:torches.length,files:blobs.length,fixed:0}; await saveMeta();
+}
+
+/* snapshots */
+async function uploadSnapshot(kind){
+  const {blob,name}=await buildBackup(kind||"snapshot"); await dbxUpload("/snapshots/"+name,blob,"add");
+  await setDbx({lastSnap:new Date().toISOString(),lastSnapSize:blob.size}); return name;
+}
+async function maybeSnapshot(force){
+  if(!dbxOn()||S.readOnly||!S.torches.length) return;
+  if(!force){ if(!S.meta.snapDirty||S.meta.lastSnapDay===todayStr()) return; if((S.meta.dbx||{}).wifiOnly!==false&&onCellular()) return; }
+  if(force) toast("Making a snapshot…");
+  await uploadSnapshot("snapshot"); S.meta.lastSnapDay=todayStr(); S.meta.snapDirty=false; await saveMeta(); refreshDbxPanel();
+  if(force) toast("Snapshot saved to Dropbox");
+  pruneSnapshots().catch(()=>{});
+}
+async function pruneSnapshots(){
+  const list=(await dbxList("/snapshots")).sort((a,b)=>String(b.server_modified).localeCompare(String(a.server_modified)));
+  const now=Date.now(), months=new Set();
+  for(const e of list){ const t=new Date(e.server_modified), age=(now-t)/864e5;
+    if(age<=SNAP_DAILY_DAYS) continue;
+    const m=t.getFullYear()+"-"+t.getMonth();
+    if(age<=SNAP_MONTHS*31&&!months.has(m)){ months.add(m); continue; }
+    await dbxApi("files/delete_v2",{path:e.path_lower}); }
+}
+async function dbxListBackups(){
+  const el=$("#dbxList"); if(!el) return; el.innerHTML=`<p class="muted small">Looking in Dropbox…</p>`;
+  try{ const list=[...await dbxList("/snapshots"),...await dbxList("/backups")].filter(e=>/\.zip$/i.test(e.name)).sort((a,b)=>String(b.server_modified).localeCompare(String(a.server_modified)));
+    el.innerHTML=list.length?`<div class="lst">${list.slice(0,60).map(e=>`<div class="item"><div><b>${esc(fmtWhen(e.server_modified))}</b><div class="muted small">${/before-restore/.test(e.name)?"Before a restore · ":""}${(e.size/1048576).toFixed(1)} MB</div></div><button type="button" class="btn sm" data-dbxget="${esc(e.path_lower)}">Use this</button></div>`).join("")}</div>`:`<p class="muted small">No snapshots in Dropbox yet.</p>`;
+  }catch(e){ el.innerHTML=`<p class="small" style="color:var(--warn)">Couldn't list Dropbox snapshots: ${esc(e.message||e)}</p>`; }
+}
+async function dbxDisconnect(){
+  try{ await dbxApi("auth/token/revoke"); }catch{}
+  const dx=S.meta.dbx||{}; S.meta.dbx={appKey:dx.appKey,wifiOnly:dx.wifiOnly}; S.readOnly=false; S.meta.readOnly=false; await saveMeta(); clearTimeout(_syncT); render(); toast("Dropbox disconnected — everything already in Dropbox is kept");
+}
+async function markBackedUp(){ S.meta.lastBackup=new Date().toISOString(); S.meta.changes=0; await saveMeta(); hdrStatus(); }
 let _restore=null;
 async function readRestore(file){
   const st=$("#rsStat")||{}; st.textContent="Reading…";
   try{
-    const zip=await JSZip.loadAsync(file); const j=zip.file("backup.json"); if(!j) throw new Error("This isn't a Maglite Collection backup (no backup.json inside).");
+    const zip=await JSZip.loadAsync(file); const j=zip.file("backup.json"); if(!j) throw new Error("This isn't a MyMaglites backup (no backup.json inside).");
     const data=JSON.parse(await j.async("string")); if(data.app!==APP_ID) throw new Error("This file is from a different app.");
     _restore={zip,data};
-    const html=`<div class="banner" style="margin-top:8px"><span>Backup from ${fmtDate(String(data.exportedAt).slice(0,10))}: ${data.torches.length} torches, ${data.files.length} photos/files, ${data.classes.length} classes, ${data.guides.length} charts. This replaces what's on this phone${S.torches.length?` (${S.torches.length} torches)`:""}.</span><button type="button" class="btn primary sm" data-rsyes>Restore</button><button type="button" class="btn ghost sm" data-rsno>Cancel</button></div>`;
+    const html=`<div class="banner" style="margin-top:8px"><span>Backup from ${fmtWhen(data.exportedAt)}: ${data.torches.length} torches, ${data.files.length} photos/files, ${data.classes.length} classes, ${data.guides.length} charts. This replaces what's on this phone${S.torches.length?` (${S.torches.length} torches)`:""}.</span><button type="button" class="btn primary sm" data-rsyes>Restore</button><button type="button" class="btn ghost sm" data-rsno>Cancel</button></div>`;
     if($("#rsConfirm")){ $("#rsConfirm").innerHTML=html; st.textContent=""; }
     else { S.tab="more"; S.moreView="backup"; render(); $("#rsConfirm").innerHTML=html; }
   }catch(e){ if($("#rsStat")) $("#rsStat").textContent=""; toast(e.message||"That file couldn't be read."); }
 }
 async function doRestore(){
-  const {zip,data}=_restore; const st=$("#rsStat"); st.textContent="Restoring…";
+  const {zip,data}=_restore; const st=$("#rsStat");
+  if(S.readOnly){ toast(RO_MSG); return; }
+  if(dbxOn()&&S.torches.length){ st.textContent="Saving a snapshot of what's here first…"; try{ await uploadSnapshot("before-restore"); }catch(e){ st.textContent=""; toast("Couldn't save a snapshot to Dropbox first ("+(e.message||e)+"). Make a backup file, then try again."); return; } }
+  st.textContent="Restoring…"; _bulk++; try{
   for(const s of ["torches","wanted","classes","guides","files"]) await dbClear(s);
   for(const u of Object.values(S.urls)) URL.revokeObjectURL(u); S.urls={};
   let n=0; for(const f of data.files){ const z=zip.file(f.path); if(!z) continue; const b=await z.async("blob"); await dbPut("files",{id:f.id,type:f.type,name:f.name,blob:new Blob([b],{type:f.type})}); if(++n%10===0) st.textContent=`Restoring photos ${n} of ${data.files.length}…`; }
   for(const c of data.classes) await dbPut("classes",c); for(const g of data.guides) await dbPut("guides",g); for(const t of data.torches) await dbPut("torches",t); for(const w of (data.wanted||[])) await dbPut("wanted",w);
-  S.meta.lastBackup=data.exportedAt; await dbPut("meta",{id:"main",...S.meta});
-  _restore=null; await reload(); await migrateData(); askPersist(); S.tab="collection"; S.dateState=null; render(); toast(`Restored ${data.torches.length} torches`);
+  S.meta.lastBackup=data.exportedAt; S.meta.changes=0; S.meta.needFull=true; S.meta.snapDirty=true; await tx("outbox","readwrite",os=>os.clear()); await saveMeta();
+  _restore=null; await reload(); await migrateData(); }finally{ _bulk--; } askPersist(); S.tab="collection"; S.dateState=null; render(); toast(`Restored ${data.torches.length} torches`); if(dbxOn()) syncNow();
 }
 
 /* ---------- CSV ---------- */
@@ -916,7 +1213,7 @@ function viewReports(){
 }
 const rDate=()=>new Date().toLocaleDateString("en-AU",{day:"numeric",month:"long",year:"numeric"});
 function rFilterDesc(o){ const all=S.classes.filter(c=>S.torches.some(t=>t.classId===c.id)); const cl=!o.classes||o.classes.length>=all.length?"All classes":all.filter(c=>o.classes.includes(c.id)).map(c=>c.name).join(", "); return `${cl} · ${o.statuses.join(", ")}`; }
-function rHeader(title,o,count,noun="torch"){ return `<header class="rh"><div><div class="rk">Maglite Collection</div><h1>${esc(title)}</h1>${o.prepared?`<div class="rp">${esc(o.prepared)}</div>`:""}</div><div class="rm">${esc(rDate())}<br>${count!=null?`${count} ${noun}${count===1?"":noun==="torch"?"es":"s"}`:""}${o.type!=="wanted"?`<br>${esc(rFilterDesc(o))}`:""}</div></header>`; }
+function rHeader(title,o,count,noun="torch"){ return `<header class="rh"><div><div class="rk">MyMaglites</div><h1>${esc(title)}</h1>${o.prepared?`<div class="rp">${esc(o.prepared)}</div>`:""}</div><div class="rm">${esc(rDate())}<br>${count!=null?`${count} ${noun}${count===1?"":noun==="torch"?"es":"s"}`:""}${o.type!=="wanted"?`<br>${esc(rFilterDesc(o))}`:""}</div></header>`; }
 function rThumb(ph,cls){ if(!ph) return `<div class="${cls} none">No photo</div>`; if(ph.frame){ const f=ph.frame; return `<div class="${cls} fr"><img data-fid="${esc(ph.id)}" alt="" style="width:${100/f.w}%;height:${100/f.h}%;left:${-f.x/f.w*100}%;top:${-f.y/f.h*100}%"></div>`; } return `<div class="${cls}"><img data-fid="${esc(ph.id)}" alt="" class="cov"></div>`; }
 const rAud=n=>n==null?"—":fmtMoney(n,"AUD");
 function rValueAUD(t){ const lo=valAUD(t,"valueLow"),hi=valAUD(t,"valueHigh"); if(lo==null&&hi==null) return "Not valued"; return lo!=null&&hi!=null&&lo!==hi?`${rAud(lo)} – ${rAud(hi)}`:rAud(hi??lo); }
@@ -935,7 +1232,7 @@ function buildReport(o){
 .th22{width:22mm;height:22mm;position:relative;overflow:hidden;border-radius:2px;background:#eee}.th22 img{position:absolute;max-width:none}.th22 img.cov{position:static;width:100%;height:100%;object-fit:cover}.th22.none{display:flex;align-items:center;justify-content:center;font-size:7pt;color:#777}
 .box{display:inline-block;width:10pt;height:10pt;border:1pt solid #111;margin-right:6px;vertical-align:-1pt}.ck{list-style:none;padding:0;margin:2px 0 8px}.ck li{padding:2px 0;break-inside:avoid}.tgrp{break-inside:avoid;margin-bottom:8px}
 .rnote{font-size:8pt;color:#444;margin-top:10px;border-top:.5pt solid #bbb;padding-top:4px}</style>`;
-  const ver=`<div class="rnote">Generated by Maglite Collection on ${esc(rDate())}. Amounts in Australian dollars unless shown otherwise; foreign-currency amounts converted at the European Central Bank rate on the date shown, or as entered.</div>`;
+  const ver=`<div class="rnote">Generated by MyMaglites on ${esc(rDate())}. Amounts in Australian dollars unless shown otherwise; foreign-currency amounts converted at the European Central Bank rate on the date shown, or as entered.</div>`;
   if(o.type==="wanted"){
     const w=S.wanted.filter(x=>o.gotToo||!x.got).sort((a,b)=>({High:0,Medium:1,Low:2}[a.priority]??1)-({High:0,Medium:1,Low:2}[b.priority]??1)||String(a.model).localeCompare(String(b.model),undefined,{numeric:true}));
     const have=m=>S.torches.filter(t=>String(t.model||"").toLowerCase()===String(m||"").trim().toLowerCase()&&isOwned(t)).length;
@@ -1058,7 +1355,7 @@ async function migrateData(){
 }
 /* fill any AUD amounts still waiting for an exchange rate */
 let _converting=false;
-async function convertPending(){
+async function convertPending(){ if(S.readOnly) return;
   if(_converting||navigator.onLine===false) return; _converting=true; let n=0;
   try{ for(const t of S.torches.filter(pendingConv)){ const c=clone(t); if(await convertTorch(c)){ applyAutoChecks(c); await dbPut("torches",c); n++; } } }finally{ _converting=false; }
   if(n){ await reload(); if(!S.sheet) render(); toast(`${n} foreign-currency amount${n===1?"":"s"} converted to AUD`); }
@@ -1123,7 +1420,14 @@ document.addEventListener("click",async e=>{
   if("gdelyes" in d){ await dbDel("guides",S.sheet.draft.id); await reload(); closeSheet(); render(); toast("Chart deleted"); return; }
   if("backup" in d){ b.disabled=true; try{ await makeBackup(); }catch(err){ toast("Backup failed: "+(err&&err.message||err)); } b.disabled=false; return; }
   if("dlbk" in d){ setTimeout(markBackedUp,500); toast("Backup saved — check your Downloads"); return; }
-  if("sharebk" in d){ try{ await navigator.share({files:[new File([_backup.blob],_backup.name,{type:"application/zip"})],title:"Maglite Collection backup"}); await markBackedUp(); toast("Backup shared"); }catch(err){ if(err&&err.name!=="AbortError") toast("Sharing didn't work — use Save to phone."); } return; }
+  if("dbxconnect" in d){ b.disabled=true; try{ await dbxConnect(); }catch(err){ toast("Couldn't start Dropbox sign-in: "+(err.message||err)); } b.disabled=false; return; }
+  if("dbxsync" in d){ if(!dbxOn()){ S.tab="more"; S.moreView="backup"; render(); return; } await syncNow({manual:true}); return; }
+  if("dbxcheck" in d){ await syncNow({check:true}); const v=S.meta.verify; if(v&&!S.meta.dbx.lastError) toast(v.fixed?`Checked: fixed ${v.fixed} item${v.fixed===1?"":"s"} in Dropbox`:`Checked: ${v.torches} torches and ${v.files} photos/files all match ✓`); return; }
+  if("dbxsnap" in d){ b.disabled=true; try{ await maybeSnapshot(true); }catch(err){ toast("Snapshot failed: "+(err.message||err)); } b.disabled=false; return; }
+  if("dbxtake" in d){ if(!b.dataset.sure){ b.dataset.sure="1"; b.textContent="Tap again to download and take over"; return; } b.disabled=true; try{ await dbxTakeOver(); }catch(err){ toast("Couldn't take over: "+(err.message||err)); b.disabled=false; } return; }
+  if("dbxoff" in d){ if(!b.dataset.sure){ b.dataset.sure="1"; b.textContent="Tap again to disconnect"; return; } await dbxDisconnect(); return; }
+  if("dbxlist" in d){ await dbxListBackups(); return; }
+  if(d.dbxget){ b.disabled=true; b.textContent="Downloading…"; try{ const blob=await dbxDownload(d.dbxget); $("#dbxList").innerHTML=""; await readRestore(new File([blob],d.dbxget.split("/").pop(),{type:"application/zip"})); }catch(err){ toast("Download failed: "+(err.message||err)); b.disabled=false; b.textContent="Use this"; } return; }
   if("restore" in d){ $("#restoreIn").click(); return; }
   if("rsyes" in d){ b.disabled=true; try{ await doRestore(); }catch(err){ toast("Restore failed: "+(err&&err.message||err)); } return; }
   if("rsno" in d){ _restore=null; $("#rsConfirm").innerHTML=""; return; }
@@ -1135,6 +1439,7 @@ document.addEventListener("input",e=>{
   if(e.target.id==="dtSerial"){ S.dateState.serial=e.target.value.replace(/\s/g,""); clearTimeout(S._st); S._st=setTimeout(()=>{ render(); const s=$("#dtSerial"); if(s){ s.focus(); const l=s.value.length; s.setSelectionRange(l,l);} },400); }
 });
 document.addEventListener("change",async e=>{
+  if(e.target.id==="dbxWifi"){ await setDbx({wifiOnly:e.target.checked}); refreshDbxPanel(); return; }
   const el=e.target;
   if(el.id==="sort"){ S.sort=el.value; render(); }
   if(el.name==="rtype"){ reportOpts().type=el.value; render(); }
@@ -1157,6 +1462,7 @@ document.addEventListener("submit",async e=>{
   await dbPut("wanted",{id:uid("w"),model,colour:(fd.get("w_colour")||"").trim(),target:tg===""?null:Number(tg),priority:fd.get("w_priority"),notes:(fd.get("w_notes")||"").trim(),got:false,addedAt:new Date().toISOString()});
   await reload(); render(); toast("Added to wanted list");
 });
+window.addEventListener("unhandledrejection",e=>{ if(e.reason&&e.reason.message===RO_MSG){ e.preventDefault(); closeSheet(); render(); toast(RO_MSG); } });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&PE){ peClose(); return; } if(e.key==="Escape"&&S.sheet){ closeSheet(); render(); } });
 
 /* ================= boot ================= */
@@ -1164,10 +1470,18 @@ async function reload(){ [S.torches,S.wanted,S.classes,S.guides]=await Promise.a
 (async()=>{
   try{ await openDB(); }catch(e){ $("#main").innerHTML=`<section class="view"><div class="empty">This browser can't store data for the app (private mode or storage blocked). Open it in normal Chrome.</div></section>`; return; }
   await reload();
+  _bulk++; try{
   if(!S.classes.length&&!S.guides.length){ for(const g of defaultGuides()) await dbPut("guides",g); for(const c of defaultClasses()) await dbPut("classes",c); await reload(); }
-  await migrateData();
+  await migrateData(); }finally{ _bulk--; }
   render();
+  S.readOnly=!!S.meta.readOnly; if(!S.meta.deviceSince){ S.meta.deviceSince=todayStr(); await saveMeta(); } deviceId(); hdrStatus();
+  await dbxFinish();
   convertPending();
+  if(dbxOn()) scheduleSync(1500); // checks Dropbox, sends anything missed last time, snapshots if due
+  document.addEventListener("visibilitychange",()=>{ if(!dbxOn()) return; if(document.visibilityState==="hidden"){ if(S.meta.changes) syncNow(); } else scheduleSync(1500); });
+  window.addEventListener("pagehide",()=>{ if(dbxOn()&&S.meta.changes) syncNow(); });
+  window.addEventListener("online",()=>{ if(dbxOn()) scheduleSync(2000); });
+  try{ navigator.connection&&navigator.connection.addEventListener("change",()=>{ if(dbxOn()) scheduleSync(3000); }); }catch{}
   if("serviceWorker" in navigator && location.protocol!=="file:"){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
 })();
 </script>

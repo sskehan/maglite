@@ -1,5 +1,5 @@
-// Maglite Collection — offline support. Bump VERSION when you change any app file.
-const VERSION = "mc-v5";
+// MyMaglites — offline support. Bump VERSION when you change any app file.
+const VERSION = "mc-1.0-r2";
 const SHELL = ["./", "index.html", "jszip.min.js", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSION && k !== "mc-fonts").map(k => caches.delete(k)))).then(() => self.clients.claim())); });
