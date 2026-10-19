@@ -218,15 +218,22 @@ textarea.csv{width:100%;min-height:160px;font:12px var(--f-mono);border:1px soli
 <script src="jszip.min.js"></script>
 <script>
 "use strict";
-const APP_ID="maglite-collection", APP_VERSION="1.0", BACKUP_VERSION=1, NOW=new Date().getFullYear();
+const APP_ID="maglite-collection", APP_VERSION="1.01", BACKUP_VERSION=1, NOW=new Date().getFullYear();
 
 /* ================= storage (IndexedDB, on this device) ================= */
 const STORES=["torches","wanted","classes","guides","files","meta","outbox"];
-let _db;
-function openDB(){ return new Promise((res,rej)=>{ const r=indexedDB.open("maglite-collection",2);
+let _db, _dbP;
+function openRaw(v){ return new Promise((res,rej)=>{ const r=v?indexedDB.open("maglite-collection",v):indexedDB.open("maglite-collection");
   r.onupgradeneeded=()=>{ const d=r.result; for(const s of STORES) if(!d.objectStoreNames.contains(s)) d.createObjectStore(s,{keyPath:"id"}); };
-  r.onsuccess=()=>{_db=r.result;res(_db)}; r.onerror=()=>rej(r.error); }); }
-function tx(store,mode,fn){ return new Promise((res,rej)=>{ const t=_db.transaction(store,mode); const os=t.objectStore(store); let out; const r=fn(os); if(r) r.onsuccess=()=>{out=r.result}; t.oncomplete=()=>res(out); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); }
+  r.onblocked=()=>{ const m=document.getElementById("main"); if(m) m.innerHTML=`<section class="view"><div class="empty"><b style="font:600 22px var(--f-display)">Finishing the update…</b><span>An older copy of MyMaglites is still open — usually the installed app in the background or a Chrome tab. Close it (swipe it away in your recent apps) and this carries on by itself. Your data is safe.</span></div></section>`; };
+  r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function openDB(){
+  let d=await openRaw(); // opens whatever version is on the phone, then adds any missing storage areas
+  if(STORES.some(s=>!d.objectStoreNames.contains(s))){ const v=d.version+1; d.close(); d=await openRaw(v); }
+  d.onversionchange=()=>{ d.close(); location.reload(); }; // a newer version opened elsewhere: step aside instead of blocking it
+  _db=d; return d;
+}
+function tx(store,mode,fn){ if(!_db) return (_dbP||Promise.reject(new Error("Storage isn't ready yet — close and reopen the app"))).then(()=>tx(store,mode,fn)); return new Promise((res,rej)=>{ const t=_db.transaction(store,mode); const os=t.objectStore(store); let out; const r=fn(os); if(r) r.onsuccess=()=>{out=r.result}; t.oncomplete=()=>res(out); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); }
 const dbAll=s=>tx(s,"readonly",os=>os.getAll());
 const dbGet=(s,id)=>tx(s,"readonly",os=>os.get(id));
 let _bulk=0; // >0 while restoring or upgrading data, so those writes don't count as your changes
@@ -1468,7 +1475,7 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&PE){ peClose(); re
 /* ================= boot ================= */
 async function reload(){ [S.torches,S.wanted,S.classes,S.guides]=await Promise.all(["torches","wanted","classes","guides"].map(dbAll)); const m=await dbGet("meta","main"); S.meta=m?(({id,...r})=>r)(m):{}; }
 (async()=>{
-  try{ await openDB(); }catch(e){ $("#main").innerHTML=`<section class="view"><div class="empty">This browser can't store data for the app (private mode or storage blocked). Open it in normal Chrome.</div></section>`; return; }
+  try{ _dbP=openDB(); await _dbP; }catch(e){ $("#main").innerHTML=`<section class="view"><div class="empty">This browser can't store data for the app (private mode or storage blocked). Open it in normal Chrome.</div></section>`; return; }
   await reload();
   _bulk++; try{
   if(!S.classes.length&&!S.guides.length){ for(const g of defaultGuides()) await dbPut("guides",g); for(const c of defaultClasses()) await dbPut("classes",c); await reload(); }
